@@ -46,16 +46,22 @@ export default function DashboardPage() {
     
     if (confirm(`¿Estás seguro de que deseas eliminar el agente "${agentName}"? Esta acción no se puede deshacer.`)) {
       setDeletingAgentId(agentId);
-      const result = await deleteAgent(agentId);
       
-      if (result.success) {
-        // La lista se actualiza automáticamente en el hook
-        await fetchAgents();
-      } else {
-        alert(`Error al eliminar el agente: ${result.error}`);
+      try {
+        const result = await deleteAgent(agentId);
+        
+        if (result.success) {
+          // La lista se actualiza automáticamente en el hook
+          await fetchAgents();
+        } else {
+          alert(`Error al eliminar el agente: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Error al eliminar agente:', error);
+        alert(`Error inesperado al eliminar el agente: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      } finally {
+        setDeletingAgentId(null);
       }
-      
-      setDeletingAgentId(null);
     }
   };
 
