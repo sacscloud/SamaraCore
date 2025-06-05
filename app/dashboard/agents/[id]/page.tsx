@@ -181,7 +181,7 @@ export default function AgentEditorPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {error && (
-          <div className="mb-6 p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+          <div className="mb-6 p-4 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
             {error}
           </div>
         )}
@@ -378,7 +378,7 @@ export default function AgentEditorPage() {
               </CardHeader>
               <CardContent>
                 {jsonError && (
-                  <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                  <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
                     Error JSON: {jsonError}
                   </div>
                 )}
