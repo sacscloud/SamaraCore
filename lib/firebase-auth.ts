@@ -31,24 +31,15 @@ export async function verifyFirebaseAuth(request: NextRequest) {
 
     // Verificar que las variables de entorno estén configuradas
     if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-      console.warn('⚠️  Firebase Admin credentials not configured. Using basic token validation for development.');
-      
-      // Validación básica para desarrollo
-      if (token.length < 10) {
-        return { 
-          authenticated: false, 
-          error: 'Token de autorización inválido',
-          response: NextResponse.json(
-            { success: false, error: 'Token de autorización inválido' },
-            { status: 401 }
-          )
-        };
-      }
+      console.error('❌ Firebase Admin credentials not configured. Authentication cannot proceed without proper Firebase setup.');
       
       return { 
-        authenticated: true, 
-        userId: 'dev-user-id', 
-        user: null 
+        authenticated: false, 
+        error: 'Configuración de autenticación incompleta',
+        response: NextResponse.json(
+          { success: false, error: 'Configuración de autenticación incompleta' },
+          { status: 500 }
+        )
       };
     }
 
@@ -65,26 +56,22 @@ export async function verifyFirebaseAuth(request: NextRequest) {
     } catch (firebaseError: any) {
       console.error('Error verificando token con Firebase Admin:', firebaseError);
       
-      // Si hay error con Firebase Admin, verificar si es un error de configuración
-      if (firebaseError.code === 'auth/invalid-argument' || 
-          firebaseError.message?.includes('credential')) {
-        console.warn('⚠️  Firebase Admin configuration error. Check your environment variables.');
-        
-        // Fallback a validación básica
-        if (token.length >= 10) {
-          return { 
-            authenticated: true, 
-            userId: 'fallback-user-id', 
-            user: null 
-          };
-        }
+      // Manejar errores específicos de Firebase
+      let errorMessage = 'Token de autorización inválido';
+      
+      if (firebaseError.code === 'auth/id-token-expired') {
+        errorMessage = 'Token de autorización expirado';
+      } else if (firebaseError.code === 'auth/invalid-argument') {
+        errorMessage = 'Token de autorización malformado';
+      } else if (firebaseError.code === 'auth/id-token-revoked') {
+        errorMessage = 'Token de autorización revocado';
       }
       
       return { 
         authenticated: false, 
-        error: 'Token de autorización inválido',
+        error: errorMessage,
         response: NextResponse.json(
-          { success: false, error: 'Token de autorización inválido' },
+          { success: false, error: errorMessage },
           { status: 401 }
         )
       };
@@ -97,7 +84,7 @@ export async function verifyFirebaseAuth(request: NextRequest) {
       error: 'Error al verificar token',
       response: NextResponse.json(
         { success: false, error: 'Error al verificar token' },
-        { status: 401 }
+        { status: 500 }
       )
     };
   }
