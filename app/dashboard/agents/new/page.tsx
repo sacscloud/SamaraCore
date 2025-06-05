@@ -33,28 +33,34 @@ export default function NewAgentPage() {
 
     setIsSubmitting(true);
     
-    const newAgent = {
-      agentId: `agent_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      agentName: formData.agentName.trim(),
-      description: formData.description.trim(),
-      prompt: {
-        base: formData.systemPrompt.trim() || 'You are a helpful AI assistant.',
-        examples: '',
-        rules: '',
-        decision_logic: '',
-        response_format: '',
-        other_instructions: ''
-      },
-      tools: [],
-      agents: []
-    };
+    try {
+      const newAgent = {
+        agentId: `agent_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        agentName: formData.agentName.trim(),
+        description: formData.description.trim(),
+        prompt: {
+          base: formData.systemPrompt.trim() || 'You are a helpful AI assistant.',
+          examples: '',
+          rules: '',
+          decision_logic: '',
+          response_format: '',
+          other_instructions: ''
+        },
+        tools: [],
+        agents: []
+      };
 
-    const result = await saveAgent(newAgent);
-    
-    if (result.success && result.agent) {
-      router.push(`/dashboard/agents/${result.agent.agentId}`);
-    } else {
-      alert(`Error al crear el agente: ${result.error || 'Error desconocido'}`);
+      const result = await saveAgent(newAgent);
+      
+      if (result.success && result.agent) {
+        router.push(`/dashboard/agents/${result.agent.agentId}`);
+      } else {
+        alert(`Error al crear el agente: ${result.error || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      console.error('Error al crear agente:', error);
+      alert(`Error inesperado al crear el agente: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
       setIsSubmitting(false);
     }
   };
