@@ -6,8 +6,12 @@ import { AuthProvider } from '@/components/AuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SamaraCore - Plataforma de Agentes IA',
-  description: 'Crea y configura tus agentes de inteligencia artificial personalizados',
+  title: 'SamaraCore - Tu Inteligencia Artificial, a tu Medida',
+  description: 'Crea agentes inteligentes con herramientas personalizadas, memoria y lógica propia. Sin límites, sin dependencias.',
+  keywords: 'inteligencia artificial, agentes IA, automatización, herramientas personalizadas, chatbots, AI agents',
+  authors: [{ name: 'SamaraCore Team' }],
+  viewport: 'width=device-width, initial-scale=1',
+  themeColor: '#0E0E10',
 }
 
 export default function RootLayout({
@@ -16,9 +20,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
-        <div className="min-h-screen bg-background text-foreground">
+    <html lang="es" suppressHydrationWarning className="dark">
+      <body className={`${inter.className} antialiased`}>
+        <div className="min-h-screen bg-[#0E0E10] text-white">
           <AuthProvider>
             {children}
           </AuthProvider>
