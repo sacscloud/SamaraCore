@@ -1,18 +1,20 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgent } from '@/hooks/useAgent';
+import { Trash2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth();
-  const { agents, loading: agentsLoading, fetchAgents } = useAgent();
+  const { agents, loading: agentsLoading, fetchAgents, deleteAgent } = useAgent();
   const router = useRouter();
   const hasFetchedAgents = useRef(false);
+  const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -21,21 +23,43 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    // Solo fetch agents una vez cuando el usuario esté disponible
     if (user && !hasFetchedAgents.current) {
       hasFetchedAgents.current = true;
       fetchAgents();
     }
     
-    // Reset flag cuando el usuario cambie
     if (!user) {
       hasFetchedAgents.current = false;
     }
-  }, [user]); // Solo user como dependencia, NO fetchAgents
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
     router.push('/');
+  };
+
+  const handleDeleteAgent = async (agentId: string, agentName: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (confirm(`¿Estás seguro de que deseas eliminar el agente "${agentName}"? Esta acción no se puede deshacer.`)) {
+      setDeletingAgentId(agentId);
+      
+      try {
+        const result = await deleteAgent(agentId);
+        
+        if (result.success) {
+          await fetchAgents();
+        } else {
+          alert(`Error al eliminar el agente: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Error al eliminar agente:', error);
+        alert(`Error inesperado al eliminar el agente: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      } finally {
+        setDeletingAgentId(null);
+      }
+    }
   };
 
   if (authLoading) {
@@ -175,84 +199,89 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Agents Grid */}
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-white">Mis Agentes IA</h2>
-            <Link href="/dashboard/agents">
-              <Button 
-                variant="ghost" 
-                className="text-[#00FFC3] hover:text-white hover:bg-[#00FFC3]/10 border border-[#00FFC3]/20 hover:border-[#00FFC3]/50 transition-all duration-300"
-              >
-                Ver todos
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+        {/* Agents Section */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white">Tus Agentes</h2>
+            <Link href="/dashboard/agents/new">
+              <Button className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-lg hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300 hover:scale-105">
+                + Crear Agente
               </Button>
             </Link>
           </div>
 
           {agentsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="bg-gray-900/40 border-gray-700/50 animate-pulse">
-                  <CardHeader>
-                    <div className="h-6 bg-gray-700/50 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-700/50 rounded w-1/2"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-4 bg-gray-700/50 rounded w-full mb-2"></div>
-                    <div className="h-4 bg-gray-700/50 rounded w-2/3"></div>
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="bg-gray-900/40 border-gray-700/50">
+                  <CardContent className="p-6">
+                    <div className="animate-pulse">
+                      <div className="w-12 h-12 bg-gray-700 rounded-xl mb-4"></div>
+                      <div className="h-4 bg-gray-700 rounded mb-2 w-3/4"></div>
+                      <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : agents.length === 0 ? (
-            <Card className="bg-gray-900/40 border-gray-700/50 p-12 text-center">
-              <div className="w-24 h-24 bg-gradient-to-br from-[#3B82F6]/20 to-[#00FFC3]/20 rounded-3xl mx-auto mb-6 flex items-center justify-center">
-                <svg className="w-12 h-12 text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">¡Comienza tu viaje con IA!</h3>
-              <p className="text-gray-400 mb-8 max-w-md mx-auto leading-relaxed">
-                Crea tu primer agente para comenzar a automatizar tareas y potenciar tu productividad con inteligencia artificial.
-              </p>
-              <Link href="/dashboard/agents/new">
-                <Button className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-xl hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300 hover:scale-105">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <Card className="bg-gray-900/40 border-gray-700/50">
+              <CardContent className="p-12 text-center">
+                <div className="w-20 h-20 bg-gray-800/50 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
-                  Crear Mi Primer Agente
-                </Button>
-              </Link>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-3">
+                  ¡Es hora de crear tu primer agente!
+                </h3>
+                <p className="text-gray-400 mb-6 max-w-md mx-auto">
+                  Los agentes de IA te ayudarán a automatizar tareas, analizar datos y mejorar tu productividad.
+                </p>
+                <Link href="/dashboard/agents/new">
+                  <Button className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-lg hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300 hover:scale-105">
+                    Crear Mi Primer Agente
+                  </Button>
+                </Link>
+              </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {agents.slice(0, 6).map((agent) => (
-                <Card key={agent.agentId} className="bg-gray-900/40 border-gray-700/50 hover:border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/10 transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
-                  <Link href={`/dashboard/agents/${agent.agentId}`}>
+              {agents.map((agent) => (
+                <Link key={agent.agentId} href={`/dashboard/agents/${agent.agentId}`} className="group">
+                  <Card className="bg-gray-900/40 border-gray-700/50 hover:border-[#3B82F6]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#3B82F6]/10 hover:-translate-y-1 cursor-pointer relative">
                     <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg text-white group-hover:text-[#00FFC3] transition-colors">
-                            {agent.agentName}
-                          </CardTitle>
-                          <CardDescription className="text-sm text-gray-400 mt-1">
-                            {agent.description || 'Sin descripción disponible'}
-                          </CardDescription>
-                        </div>
-                        <div className="w-12 h-12 bg-gradient-to-br from-[#3B82F6]/20 to-[#00FFC3]/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                          <svg className="w-6 h-6 text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center justify-between">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <svg className="w-6 h-6 text-[#0E0E10]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                                   d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                           </svg>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleDeleteAgent(agent.agentId, agent.agentName, e)}
+                          disabled={deletingAgentId === agent.agentId}
+                          className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors p-2"
+                        >
+                          {deletingAgentId === agent.agentId ? (
+                            <div className="w-4 h-4 border-2 border-gray-400/30 border-t-gray-400 rounded-full animate-spin"></div>
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
                       </div>
+                      <CardTitle className="text-white group-hover:text-[#00FFC3] transition-colors">
+                        {agent.agentName}
+                      </CardTitle>
+                      <CardDescription className="text-gray-400">
+                        {agent.description || 'Sin descripción'}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
                         <div className="flex items-center gap-1">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
@@ -260,17 +289,12 @@ export default function DashboardPage() {
                           </svg>
                           <span>{agent.tools?.length || 0} herramientas</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <span>{agent.agents?.length || 0} sub-agentes</span>
-                        </div>
+                        <span className="w-2 h-2 bg-[#00FFC3] rounded-full"></span>
+                        <span className="text-[#00FFC3]">Activo</span>
                       </div>
                     </CardContent>
-                  </Link>
-                </Card>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}

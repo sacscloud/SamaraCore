@@ -203,7 +203,11 @@ export default function AgentEditorPage() {
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8 relative">
         {error && (
+<<<<<<< HEAD
           <div className="mb-6 p-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg backdrop-blur-sm">
+=======
+          <div className="mb-6 p-4 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
+>>>>>>> main
             {error}
           </div>
         )}
@@ -450,8 +454,13 @@ export default function AgentEditorPage() {
               </CardHeader>
               <CardContent>
                 {jsonError && (
+<<<<<<< HEAD
                   <div className="mb-4 p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg">
                     Error en JSON: {jsonError}
+=======
+                  <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive rounded-md">
+                    Error JSON: {jsonError}
+>>>>>>> main
                   </div>
                 )}
                 <Textarea
