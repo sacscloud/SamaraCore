@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth();
   const { agents, loading: agentsLoading, fetchAgents } = useAgent();
   const router = useRouter();
+  const hasFetchedAgents = useRef(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -20,10 +21,17 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (user) {
+    // Solo fetch agents una vez cuando el usuario esté disponible
+    if (user && !hasFetchedAgents.current) {
+      hasFetchedAgents.current = true;
       fetchAgents();
     }
-  }, [user, fetchAgents]);
+    
+    // Reset flag cuando el usuario cambie
+    if (!user) {
+      hasFetchedAgents.current = false;
+    }
+  }, [user]); // Solo user como dependencia, NO fetchAgents
 
   const handleLogout = async () => {
     await logout();
