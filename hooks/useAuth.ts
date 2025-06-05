@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -18,21 +19,18 @@ export const useAuth = () => {
           setLoading(false);
         });
 
-        return unsubscribe;
+        unsubscribeRef.current = unsubscribe;
       } catch (error) {
         console.error('Error initializing auth:', error);
         setLoading(false);
       }
     };
 
-    let unsubscribe: (() => void) | undefined;
-    initAuth().then((unsub) => {
-      unsubscribe = unsub;
-    });
+    initAuth();
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
       }
     };
   }, []);

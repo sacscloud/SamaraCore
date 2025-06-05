@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { AgentSchema } from '@/lib/schemas';
+import { verifyAuth } from '@/lib/auth-middleware';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Verificar autenticación
+  const authResult = await verifyAuth(request);
+  if (!authResult.authenticated) {
+    return authResult.response;
+  }
+
   try {
     const client = await clientPromise;
     const db = client.db('samaracore');
@@ -36,6 +43,12 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Verificar autenticación
+  const authResult = await verifyAuth(request);
+  if (!authResult.authenticated) {
+    return authResult.response;
+  }
+
   try {
     const body = await request.json();
     
@@ -45,12 +58,13 @@ export async function PUT(
     const client = await clientPromise;
     const db = client.db('samaracore');
     
-    // Actualizar agente
+    // Actualizar agente con información del usuario que modifica
     const result = await db.collection('agents').updateOne(
       { agentId: params.id },
       { 
         $set: {
           ...validatedAgent,
+          updatedBy: authResult.userId, // Agregar quién modificó el agente
           updatedAt: new Date()
         }
       }
@@ -90,6 +104,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Verificar autenticación
+  const authResult = await verifyAuth(request);
+  if (!authResult.authenticated) {
+    return authResult.response;
+  }
+
   try {
     const client = await clientPromise;
     const db = client.db('samaracore');

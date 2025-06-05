@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { AgentSchema } from '@/lib/schemas';
+import { verifyAuth } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
+  // Verificar autenticación
+  const authResult = await verifyAuth(request);
+  if (!authResult.authenticated) {
+    return authResult.response;
+  }
+
   try {
     const client = await clientPromise;
     const db = client.db('samaracore');
@@ -23,6 +30,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Verificar autenticación
+  const authResult = await verifyAuth(request);
+  if (!authResult.authenticated) {
+    return authResult.response;
+  }
+
   try {
     const body = await request.json();
     
@@ -44,9 +57,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Crear nuevo agente
+    // Crear nuevo agente con información del usuario autenticado
     const result = await db.collection('agents').insertOne({
       ...validatedAgent,
+      createdBy: authResult.userId, // Agregar el ID del usuario que crea el agente
       createdAt: new Date(),
       updatedAt: new Date()
     });

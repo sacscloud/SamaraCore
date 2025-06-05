@@ -40,10 +40,10 @@ export default function LoginPage() {
       const result = await loginWithGoogle();
       if (!result.success) {
         setError(result.error || 'Error al iniciar sesión con Google');
-        setIsGoogleLoading(false);
       }
     } catch (error) {
       setError('Error al iniciar sesión con Google');
+    } finally {
       setIsGoogleLoading(false);
     }
   };
