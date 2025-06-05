@@ -1,8 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['mongodb'],
-    appDir: true,
+    serverComponentsExternalPackages: ['mongodb', 'firebase-admin'],
   },
   webpack: (config, { isServer }) => {
     // Excluir undici del lado del cliente para evitar errores de module parse

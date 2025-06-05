@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Agent } from '@/lib/schemas';
 
 // Función auxiliar para obtener el token de Firebase
@@ -35,8 +35,8 @@ export const useAgent = (agentId?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Obtener lista de agentes
-  const fetchAgents = async () => {
+  // Obtener lista de agentes (usando useCallback para evitar recreación)
+  const fetchAgents = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -57,10 +57,10 @@ export const useAgent = (agentId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Sin dependencias ya que es una función independiente
 
-  // Obtener un agente específico
-  const fetchAgent = async (id: string) => {
+  // Obtener un agente específico (usando useCallback)
+  const fetchAgent = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -84,10 +84,10 @@ export const useAgent = (agentId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Guardar agente (crear o actualizar)
-  const saveAgent = async (agentData: Agent) => {
+  const saveAgent = useCallback(async (agentData: Agent) => {
     setLoading(true);
     setError(null);
     try {
@@ -121,10 +121,10 @@ export const useAgent = (agentId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [agent]);
 
   // Eliminar agente
-  const deleteAgent = async (id: string) => {
+  const deleteAgent = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -152,15 +152,15 @@ export const useAgent = (agentId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  // useEffect optimizado - solo se ejecuta cuando cambia agentId
   useEffect(() => {
     if (agentId) {
       fetchAgent(agentId);
-    } else {
-      fetchAgents();
     }
-  }, [agentId]);
+    // NO llamamos fetchAgents aquí para evitar el loop
+  }, [agentId, fetchAgent]);
 
   return {
     agent,
