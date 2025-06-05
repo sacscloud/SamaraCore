@@ -260,7 +260,8 @@ export default function AgentEditorPage() {
                       placeholder="mi-agente-unico"
                       value={formData.agentId}
                       onChange={(e) => handleInputChange('agentId', e.target.value)}
-                      className="bg-gray-800/50 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20"
+                      disabled={!isNew}
+                      className="bg-gray-800/50 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <p className="text-xs text-gray-500">Identificador único para el agente</p>
                   </div>
