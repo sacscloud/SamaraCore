@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { AgentSchema } from '@/lib/schemas';
-import { verifyAuth } from '@/lib/auth-middleware';
+import { verifyFirebaseAuth } from '@/lib/firebase-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   // Verificar autenticación
-  const authResult = await verifyAuth(request);
+  const authResult = await verifyFirebaseAuth(request);
   if (!authResult.authenticated) {
     return authResult.response;
   }
@@ -44,7 +44,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   // Verificar autenticación
-  const authResult = await verifyAuth(request);
+  const authResult = await verifyFirebaseAuth(request);
   if (!authResult.authenticated) {
     return authResult.response;
   }
@@ -105,7 +105,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   // Verificar autenticación
-  const authResult = await verifyAuth(request);
+  const authResult = await verifyFirebaseAuth(request);
   if (!authResult.authenticated) {
     return authResult.response;
   }

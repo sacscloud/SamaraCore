@@ -1,34 +1,37 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { requiresAuth } from '@/lib/auth-middleware'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Rutas del dashboard que requieren autenticación
-  const protectedDashboardRoutes = ['/dashboard']
+  // Rutas de API que requieren autenticación
+  const protectedApiRoutes = [
+    '/api/agents',
+    '/api/users',
+    '/api/dashboard'
+  ];
   
-  // Verificar si la ruta actual del dashboard está protegida
-  const isDashboardProtectedRoute = protectedDashboardRoutes.some(route => 
-    pathname.startsWith(route)
-  )
-
   // Verificar si es una ruta de API que requiere autenticación
-  const isProtectedApiRoute = requiresAuth(pathname)
-
-  if (isDashboardProtectedRoute) {
-    // Para rutas del dashboard, permitir el acceso y dejar que el cliente maneje la redirección
-    // En una implementación real, verificarías el token de autenticación aquí
-    return NextResponse.next()
-  }
+  const isProtectedApiRoute = protectedApiRoutes.some(route => 
+    pathname.startsWith(route)
+  );
 
   if (isProtectedApiRoute) {
-    // Para rutas de API, verificar si hay token de autorización
+    // Para rutas de API, verificar solo si hay token de autorización (verificación básica)
     const authHeader = request.headers.get('authorization')
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { success: false, error: 'Token de autorización requerido' },
+        { status: 401 }
+      )
+    }
+    
+    const token = authHeader.replace('Bearer ', '')
+    
+    if (!token || token.length < 10) {
+      return NextResponse.json(
+        { success: false, error: 'Token de autorización inválido' },
         { status: 401 }
       )
     }
@@ -44,6 +47,7 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
