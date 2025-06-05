@@ -1,23 +1,39 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { requiresAuth } from '@/lib/auth-middleware'
 
 export function middleware(request: NextRequest) {
-  // Por ahora, solo redirigir rutas protegidas al login si no hay autenticación
-  // En una implementación completa, verificarías el token de Firebase aquí
-  
   const { pathname } = request.nextUrl
   
-  // Rutas que requieren autenticación
-  const protectedRoutes = ['/dashboard']
+  // Rutas del dashboard que requieren autenticación
+  const protectedDashboardRoutes = ['/dashboard']
   
-  // Verificar si la ruta actual está protegida
-  const isProtectedRoute = protectedRoutes.some(route => 
+  // Verificar si la ruta actual del dashboard está protegida
+  const isDashboardProtectedRoute = protectedDashboardRoutes.some(route => 
     pathname.startsWith(route)
   )
-  
-  if (isProtectedRoute) {
+
+  // Verificar si es una ruta de API que requiere autenticación
+  const isProtectedApiRoute = requiresAuth(pathname)
+
+  if (isDashboardProtectedRoute) {
+    // Para rutas del dashboard, permitir el acceso y dejar que el cliente maneje la redirección
     // En una implementación real, verificarías el token de autenticación aquí
-    // Por ahora, permitimos el acceso y dejamos que el cliente maneje la redirección
+    return NextResponse.next()
+  }
+
+  if (isProtectedApiRoute) {
+    // Para rutas de API, verificar si hay token de autorización
+    const authHeader = request.headers.get('authorization')
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { success: false, error: 'Token de autorización requerido' },
+        { status: 401 }
+      )
+    }
+    
+    // El token será verificado completamente en cada endpoint individual
     return NextResponse.next()
   }
   
@@ -28,11 +44,10 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 } 

@@ -48,11 +48,11 @@ export default function RegisterPage() {
       const result = await loginWithGoogle();
       if (!result.success) {
         setError(result.error || 'Error al registrarse con Google');
-        setIsGoogleLoading(false);
       }
       // Si es exitoso, la redirección se maneja en AuthProvider después del redirect
     } catch (error) {
       setError('Error al registrarse con Google');
+    } finally {
       setIsGoogleLoading(false);
     }
   };

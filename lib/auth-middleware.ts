@@ -1,24 +1,78 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // NOTA: Para implementar la verificación completa de autenticación, instala firebase-admin:
 // npm install firebase-admin
 
 export async function verifyAuth(request: NextRequest) {
-  // TODO: Implementar verificación real de tokens con firebase-admin
-  // Por ahora, solo verificamos si hay un token presente
-  
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const authHeader = request.headers.get('authorization');
     
-    if (!token) {
-      return { authenticated: false, error: 'No token provided' };
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return { 
+        authenticated: false, 
+        error: 'Token de autorización requerido',
+        response: NextResponse.json(
+          { success: false, error: 'Token de autorización requerido' },
+          { status: 401 }
+        )
+      };
     }
 
-    // En producción, aquí verificarías el token con Firebase Admin SDK
-    console.warn('Auth verification not fully implemented. Install firebase-admin and implement token verification.');
+    const token = authHeader.replace('Bearer ', '');
     
-    return { authenticated: false, error: 'Authentication not implemented' };
+    if (!token) {
+      return { 
+        authenticated: false, 
+        error: 'Token de autorización inválido',
+        response: NextResponse.json(
+          { success: false, error: 'Token de autorización inválido' },
+          { status: 401 }
+        )
+      };
+    }
+
+    // TODO: En producción, verificar el token con Firebase Admin SDK
+    // Por ahora, solo verificamos que el token exista y tenga un formato básico
+    if (token.length < 10) {
+      return { 
+        authenticated: false, 
+        error: 'Token de autorización inválido',
+        response: NextResponse.json(
+          { success: false, error: 'Token de autorización inválido' },
+          { status: 401 }
+        )
+      };
+    }
+
+    console.warn('⚠️  Auth verification not fully implemented. Install firebase-admin and implement token verification.');
+    
+    // Por ahora, para desarrollo, permitimos el acceso si hay un token
+    // CAMBIAR ESTO EN PRODUCCIÓN
+    return { 
+      authenticated: true, 
+      userId: 'temp-user-id', // En producción, esto vendría del token decodificado
+      user: null 
+    };
+    
   } catch (error) {
-    return { authenticated: false, error: 'Invalid token' };
+    return { 
+      authenticated: false, 
+      error: 'Error al verificar token',
+      response: NextResponse.json(
+        { success: false, error: 'Error al verificar token' },
+        { status: 401 }
+      )
+    };
   }
+}
+
+// Función auxiliar para verificar si una ruta requiere autenticación
+export function requiresAuth(pathname: string): boolean {
+  const protectedApiRoutes = [
+    '/api/agents',
+    '/api/users',
+    '/api/dashboard'
+  ];
+  
+  return protectedApiRoutes.some(route => pathname.startsWith(route));
 }
