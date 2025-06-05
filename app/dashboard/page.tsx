@@ -1,18 +1,20 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgent } from '@/hooks/useAgent';
+import { Trash2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth();
-  const { agents, loading: agentsLoading, fetchAgents } = useAgent();
+  const { agents, loading: agentsLoading, fetchAgents, deleteAgent } = useAgent();
   const router = useRouter();
   const hasFetchedAgents = useRef(false);
+  const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -36,6 +38,31 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     await logout();
     router.push('/');
+  };
+
+  const handleDeleteAgent = async (agentId: string, agentName: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (confirm(`¿Estás seguro de que deseas eliminar el agente "${agentName}"? Esta acción no se puede deshacer.`)) {
+      setDeletingAgentId(agentId);
+      
+      try {
+        const result = await deleteAgent(agentId);
+        
+        if (result.success) {
+          // La lista se actualiza automáticamente en el hook
+          await fetchAgents();
+        } else {
+          alert(`Error al eliminar el agente: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Error al eliminar agente:', error);
+        alert(`Error inesperado al eliminar el agente: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      } finally {
+        setDeletingAgentId(null);
+      }
+    }
   };
 
   if (authLoading) {
@@ -153,10 +180,10 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {agents.slice(0, 6).map((agent) => (
-                <Card key={agent.agentId} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Card key={agent.agentId} className="hover:shadow-lg transition-shadow cursor-pointer relative group">
                   <Link href={`/dashboard/agents/${agent.agentId}`}>
                     <CardHeader>
-                      <CardTitle className="text-lg">{agent.agentName}</CardTitle>
+                      <CardTitle className="text-lg pr-8">{agent.agentName}</CardTitle>
                       <CardDescription className="text-sm">
                         {agent.description || 'Sin descripción'}
                       </CardDescription>
@@ -169,6 +196,15 @@ export default function DashboardPage() {
                       </div>
                     </CardContent>
                   </Link>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => handleDeleteAgent(agent.agentId, agent.agentName, e)}
+                    disabled={deletingAgentId === agent.agentId}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </Card>
               ))}
             </div>
