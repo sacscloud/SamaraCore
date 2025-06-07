@@ -213,7 +213,7 @@ export default function DashboardPage() {
                           )}
                         </Button>
                       </div>
-                      <CardTitle className="text-white group-hover:text-[#00FFC3] transition-colors">
+                      <CardTitle className="text-gray-900 dark:text-white group-hover:text-[#00FFC3] transition-colors">
                         {agent.agentName}
                       </CardTitle>
                       <CardDescription className="text-gray-400">

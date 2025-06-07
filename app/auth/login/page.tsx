@@ -107,7 +107,7 @@ export default function LoginPage() {
               )}
               <Button 
                 type="submit" 
-                className="w-full h-12 bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-xl hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold text-base transition-all duration-300 hover:scale-[1.02]" 
+                className="w-full h-12 !bg-gradient-to-r !from-[#3B82F6] !to-[#00FFC3] hover:shadow-xl hover:shadow-[#3B82F6]/30 !text-[#0E0E10] font-semibold text-base transition-all duration-300 hover:scale-[1.02]" 
                 disabled={isLoading || isGoogleLoading}
               >
                 {isLoading ? (
@@ -136,7 +136,7 @@ export default function LoginPage() {
               variant="outline"
               onClick={handleGoogleLogin}
               disabled={isLoading || isGoogleLoading}
-              className="w-full h-12 border-gray-600/50 text-gray-300 hover:text-white hover:bg-gray-800/50 hover:border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300"
+              className="w-full h-12 !border-gray-600/50 !text-gray-300 hover:!text-white hover:!bg-gray-800/50 hover:!border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300 !bg-transparent"
             >
               {isGoogleLoading ? (
                 <div className="flex items-center gap-2">

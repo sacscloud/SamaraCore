@@ -291,10 +291,10 @@ export default function AgentDetailPage() {
             {/* Configuration Panel */}
             <div className="space-y-6">
               {/* Base Prompt */}
-              <Card className="bg-gray-900/40 border-gray-700/50">
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <BookOpen className="w-5 h-5" />
                       Prompt Base
                     </CardTitle>
@@ -303,7 +303,7 @@ export default function AgentDetailPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => startEditing('base')}
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -332,14 +332,14 @@ export default function AgentDetailPage() {
                           size="sm"
                           variant="outline"
                           onClick={cancelEditing}
-                          className="border-gray-600"
+                          className="border-gray-300 dark:border-gray-600"
                         >
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-300 leading-relaxed bg-gray-800/30 p-4 rounded-lg">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg">
                       {agent.prompt.base || 'Sin prompt base definido'}
                     </p>
                   )}
@@ -347,10 +347,10 @@ export default function AgentDetailPage() {
               </Card>
 
               {/* Objectives */}
-              <Card className="bg-gray-900/40 border-gray-700/50">
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <Target className="w-5 h-5" />
                       Objetivos ({agent.prompt.objectives?.length || 0})
                     </CardTitle>
@@ -359,7 +359,7 @@ export default function AgentDetailPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => startEditing('objectives')}
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -388,7 +388,7 @@ export default function AgentDetailPage() {
                           size="sm"
                           variant="outline"
                           onClick={cancelEditing}
-                          className="border-gray-600"
+                          className="border-gray-300 dark:border-gray-600"
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -398,7 +398,7 @@ export default function AgentDetailPage() {
                     <ul className="space-y-2">
                       {agent.prompt.objectives && agent.prompt.objectives.length > 0 ? (
                         agent.prompt.objectives.map((objective, index) => (
-                          <li key={index} className="flex items-start gap-2 text-gray-300">
+                          <li key={index} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
                             <span className="text-[#00FFC3] mt-1">•</span>
                             <span>{objective}</span>
                           </li>
@@ -412,10 +412,10 @@ export default function AgentDetailPage() {
               </Card>
 
               {/* Rules */}
-              <Card className="bg-gray-900/40 border-gray-700/50">
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <Shield className="w-5 h-5" />
                       Reglas ({agent.prompt.rules?.length || 0})
                     </CardTitle>
@@ -424,7 +424,7 @@ export default function AgentDetailPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => startEditing('rules')}
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -453,7 +453,7 @@ export default function AgentDetailPage() {
                           size="sm"
                           variant="outline"
                           onClick={cancelEditing}
-                          className="border-gray-600"
+                          className="border-gray-300 dark:border-gray-600"
                         >
                           <X className="w-4 h-4" />
                         </Button>
@@ -463,7 +463,7 @@ export default function AgentDetailPage() {
                     <ul className="space-y-2">
                       {agent.prompt.rules && agent.prompt.rules.length > 0 ? (
                         agent.prompt.rules.map((rule, index) => (
-                          <li key={index} className="flex items-start gap-2 text-gray-300">
+                          <li key={index} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
                             <span className="text-[#3B82F6] mt-1">•</span>
                             <span>{rule}</span>
                           </li>
@@ -477,10 +477,10 @@ export default function AgentDetailPage() {
               </Card>
 
               {/* Examples */}
-              <Card className="bg-gray-900/40 border-gray-700/50">
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <BookOpen className="w-5 h-5" />
                       Ejemplos
                     </CardTitle>
@@ -489,7 +489,7 @@ export default function AgentDetailPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => startEditing('examples')}
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -518,14 +518,14 @@ export default function AgentDetailPage() {
                           size="sm"
                           variant="outline"
                           onClick={cancelEditing}
-                          className="border-gray-600"
+                          className="border-gray-300 dark:border-gray-600"
                         >
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-300 leading-relaxed bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
                       {agent.prompt.examples || 'Sin ejemplos definidos'}
                     </p>
                   )}
@@ -533,10 +533,10 @@ export default function AgentDetailPage() {
               </Card>
 
               {/* Response Format */}
-              <Card className="bg-gray-900/40 border-gray-700/50">
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white flex items-center gap-2">
+                    <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <FileText className="w-5 h-5" />
                       Formato de Respuesta
                     </CardTitle>
@@ -545,7 +545,7 @@ export default function AgentDetailPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => startEditing('responseFormat')}
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -574,14 +574,14 @@ export default function AgentDetailPage() {
                           size="sm"
                           variant="outline"
                           onClick={cancelEditing}
-                          className="border-gray-600"
+                          className="border-gray-300 dark:border-gray-600"
                         >
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-300 leading-relaxed bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
                       {agent.prompt.responseFormat || 'Sin formato específico definido'}
                     </p>
                   )}
@@ -592,15 +592,15 @@ export default function AgentDetailPage() {
             {/* Test Panel */}
             <div className="space-y-6">
               {/* Test Interface */}
-              <Card className="bg-gray-900/40 border-gray-700/50">
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-white flex items-center gap-2">
+                      <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                         <Play className="w-5 h-5" />
                         Probar Agente
                       </CardTitle>
-                      <CardDescription className="text-gray-400">
+                      <CardDescription className="text-gray-600 dark:text-gray-400">
                         Envía un mensaje para probar la respuesta del agente
                       </CardDescription>
                     </div>
@@ -636,38 +636,38 @@ export default function AgentDetailPage() {
                   </div>
 
                   {testResponse && (
-                    <div className="mt-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                      <h4 className="text-sm font-medium text-gray-400 mb-2">Respuesta del Agente:</h4>
-                      <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">{testResponse}</p>
+                    <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700/50">
+                      <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Respuesta del Agente:</h4>
+                      <p className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{testResponse}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Quick Actions */}
-              <Card className="bg-gray-900/40 border-gray-700/50">
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
-                  <CardTitle className="text-white">Acciones Rápidas</CardTitle>
+                  <CardTitle className="text-gray-900 dark:text-white">Acciones Rápidas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start border-gray-600/50 text-gray-300 hover:text-white hover:bg-gray-800/50"
+                      className="w-full justify-start border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50"
                       onClick={() => setTestMessage('¿Cómo puedes ayudarme?')}
                     >
                       ¿Cómo puedes ayudarme?
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start border-gray-600/50 text-gray-300 hover:text-white hover:bg-gray-800/50"
+                      className="w-full justify-start border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50"
                       onClick={() => setTestMessage('Explícame qué haces')}
                     >
                       Explícame qué haces
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start border-gray-600/50 text-gray-300 hover:text-white hover:bg-gray-800/50"
+                      className="w-full justify-start border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50"
                       onClick={() => setTestMessage('Dame un ejemplo de tu trabajo')}
                     >
                       Dame un ejemplo de tu trabajo
@@ -677,20 +677,20 @@ export default function AgentDetailPage() {
               </Card>
 
               {/* API Usage */}
-              <Card className="bg-gray-900/40 border-gray-700/50">
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
+                  <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                     <ExternalLink className="w-5 h-5" />
                     Uso por API
                   </CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardDescription className="text-gray-600 dark:text-gray-400">
                     Endpoint REST para integrar este agente
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-gray-800/50 p-3 rounded-lg font-mono text-sm text-gray-300">
+                  <div className="bg-gray-100 dark:bg-gray-800/50 p-3 rounded-lg font-mono text-sm text-gray-700 dark:text-gray-300">
                     <div className="mb-2">
-                      <span className="text-green-400">POST</span> http://localhost:4000/execute/{agentId}
+                      <span className="text-green-600 dark:text-green-400">POST</span> http://localhost:4000/execute/{agentId}
                     </div>
                     <div className="text-xs text-gray-500">
                       Body: {"{"}"message": "tu mensaje"{"}"} 
