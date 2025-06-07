@@ -117,7 +117,7 @@ export default function AgentDetailPage() {
     setTesting(true);
     
     try {
-      // Llamar al Core Agent
+      // Llamar al Core Agent (sin historial para pruebas rápidas)
       const response = await fetch(`http://localhost:4000/execute/${agentId}`, {
         method: 'POST',
         headers: {
@@ -125,7 +125,8 @@ export default function AgentDetailPage() {
         },
         body: JSON.stringify({
           message: testMessage,
-          context: {}
+          context: {},
+          conversationHistory: []
         }),
       });
 
