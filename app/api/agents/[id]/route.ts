@@ -17,15 +17,18 @@ export async function GET(
     const client = await clientPromise;
     const db = client.db('samaracore');
     
-    const agent = await db.collection('agents').findOne({ agentId: params.id });
-    
+    const agent = await db.collection('agents').findOne({ 
+      agentId: params.id,
+      userId: authResult.userId
+    });
+
     if (!agent) {
       return NextResponse.json(
         { success: false, error: 'Agente no encontrado' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({ 
       success: true, 
       agent: { ...agent, _id: agent._id.toString() }

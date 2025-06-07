@@ -27,6 +27,7 @@ import {
   FileText,
   MessageSquare
 } from 'lucide-react';
+import { API_CONFIG } from '@/lib/config';
 
 interface Agent {
   _id: string;
@@ -119,7 +120,7 @@ export default function AgentDetailPage() {
     
     try {
       // Llamar al Core Agent (sin historial para pruebas rápidas)
-      const response = await fetch(`http://localhost:4000/execute/${agentId}`, {
+      const response = await fetch(API_CONFIG.EXECUTE_AGENT(agentId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -690,7 +691,7 @@ export default function AgentDetailPage() {
                 <CardContent>
                   <div className="bg-gray-100 dark:bg-gray-800/50 p-3 rounded-lg font-mono text-sm text-gray-700 dark:text-gray-300">
                     <div className="mb-2">
-                      <span className="text-green-600 dark:text-green-400">POST</span> http://localhost:4000/execute/{agentId}
+                      <span className="text-green-600 dark:text-green-400">POST</span> {API_CONFIG.CORE_AGENT_URL}/execute/{agentId}
                     </div>
                     <div className="text-xs text-gray-500">
                       Body: {"{"}"message": "tu mensaje"{"}"} 
