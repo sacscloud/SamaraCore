@@ -21,7 +21,8 @@ export const AgentSchema = z.object({
   configuracion: ConfiguracionSchema.default({ modelo: 'gpt-4o-mini', temperatura: 0.7 }),
   prompt: PromptSchema,
   agents: z.array(z.string()).default([]),
-  tools: z.array(z.string()).default([])
+  tools: z.array(z.string()).default([]),
+  isPublic: z.boolean().default(false)
 });
 
 export const UserSchema = z.object({

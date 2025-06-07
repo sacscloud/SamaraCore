@@ -33,9 +33,14 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Globe,
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 import { API_CONFIG } from '@/lib/config';
+import { useConfirmationModal } from '@/components/ui/confirmation-modal';
+import { useSuccessModal } from '@/components/ui/success-modal';
 
 interface Agent {
   _id: string;
@@ -44,6 +49,7 @@ interface Agent {
   description: string;
   user_id: string;
   status: 'active' | 'inactive';
+  isPublic?: boolean;
   prompt: {
     base: string;
     objectives: string[];
@@ -70,6 +76,7 @@ export default function AgentDetailPage() {
   
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [testMessage, setTestMessage] = useState('');
   const [testResponse, setTestResponse] = useState('');
   const [testing, setTesting] = useState(false);
@@ -77,6 +84,7 @@ export default function AgentDetailPage() {
   // Estados para edición
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [changingVisibility, setChangingVisibility] = useState(false);
   const [editData, setEditData] = useState({
     base: '',
     objectives: '',
@@ -104,6 +112,10 @@ export default function AgentDetailPage() {
     orchestration: false // Orquestación expandida por defecto
   });
 
+  // Modales
+  const { showConfirmation, ConfirmationModal } = useConfirmationModal();
+  const { showSuccess, SuccessModal } = useSuccessModal();
+
   // Cargar datos del agente
   useEffect(() => {
     if (!user) return;
@@ -113,44 +125,56 @@ export default function AgentDetailPage() {
         // Obtener token de autenticación
         const token = await user.getIdToken();
         
-        const response = await fetch(`/api/agents`, {
+        // Primero obtener el agente específico
+        const agentResponse = await fetch(`/api/agents/${agentId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        const result = await response.json();
         
-        if (result.success) {
-          const foundAgent = result.agents.find((a: Agent) => a.agentId === agentId);
-          if (foundAgent) {
-            setAgent(foundAgent);
-            // Inicializar datos de edición
-            setEditData({
-              base: foundAgent.prompt.base || '',
-              objectives: foundAgent.prompt.objectives?.join('\n') || '',
-              rules: foundAgent.prompt.rules?.join('\n') || '',
-              examples: foundAgent.prompt.examples || '',
-              responseFormat: foundAgent.prompt.responseFormat || ''
-            });
-            
-            // Inicializar datos de orquestación (Fase 2)
-            setOrchestrationData({
-              enabled: foundAgent.orchestration?.enabled || false,
-              maxDepth: foundAgent.orchestration?.maxDepth || 3,
-              autoTriggerConditions: foundAgent.orchestration?.autoTriggerConditions || []
-            });
-            setSelectedSubAgents(foundAgent.subAgents || []);
-            
+        const agentResult = await agentResponse.json();
+        
+        if (agentResult.success && agentResult.agent) {
+          const foundAgent = agentResult.agent;
+          setAgent(foundAgent);
+          
+          // Inicializar datos de edición
+          setEditData({
+            base: foundAgent.prompt.base || '',
+            objectives: foundAgent.prompt.objectives?.join('\n') || '',
+            rules: foundAgent.prompt.rules?.join('\n') || '',
+            examples: foundAgent.prompt.examples || '',
+            responseFormat: foundAgent.prompt.responseFormat || ''
+          });
+          
+          // Inicializar datos de orquestación (Fase 2)
+          setOrchestrationData({
+            enabled: foundAgent.orchestration?.enabled || false,
+            maxDepth: foundAgent.orchestration?.maxDepth || 3,
+            autoTriggerConditions: foundAgent.orchestration?.autoTriggerConditions || []
+          });
+          setSelectedSubAgents(foundAgent.subAgents || []);
+          
+          // Obtener otros agentes del usuario para la orquestación
+          const allAgentsResponse = await fetch(`/api/agents`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          const allAgentsResult = await allAgentsResponse.json();
+          if (allAgentsResult.success) {
             // Filtrar agentes disponibles (excluir el agente actual)
-            const otherAgents = result.agents.filter((a: Agent) => a.agentId !== agentId);
+            const otherAgents = allAgentsResult.agents.filter((a: Agent) => a.agentId !== agentId);
             setAvailableAgents(otherAgents);
-          } else {
-            router.push('/dashboard');
           }
+        } else {
+          console.error('Error:', agentResult.error || 'Agente no encontrado');
+          setError(agentResult.error || 'Agente no encontrado');
         }
       } catch (error) {
         console.error('Error cargando agente:', error);
-        router.push('/dashboard');
+        setError('Error de conexión al cargar el agente');
       } finally {
         setLoading(false);
       }
@@ -337,6 +361,66 @@ export default function AgentDetailPage() {
     }
   };
 
+  const toggleAgentVisibility = () => {
+    if (!user || !agent) return;
+
+    const newVisibility = !agent.isPublic;
+    const actionText = newVisibility ? 'publicar' : 'despublicar';
+    
+    showConfirmation({
+      title: `${newVisibility ? 'Publicar' : 'Despublicar'} agente`,
+      description: newVisibility 
+        ? '¿Estás seguro de que quieres hacer público este agente? Estará disponible para todos los usuarios sin necesidad de iniciar sesión.'
+        : '¿Estás seguro de que quieres hacer privado este agente? Solo tú podrás acceder a él.',
+      confirmText: newVisibility ? 'Publicar' : 'Despublicar',
+      cancelText: 'Cancelar',
+      variant: newVisibility ? 'info' : 'warning',
+      onConfirm: async () => {
+        setChangingVisibility(true);
+        setError(null);
+        
+        try {
+          const token = await user.getIdToken();
+          
+          const response = await fetch(`/api/agents/${agent.agentId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              isPublic: newVisibility
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.success && result.agent) {
+            // Actualizar el estado del agente con los datos recibidos
+            setAgent(result.agent);
+            
+            // Mostrar modal de éxito
+            showSuccess({
+              title: '¡Éxito!',
+              description: `El agente ha sido ${actionText} correctamente.${newVisibility ? ' Ahora está disponible públicamente.' : ' Ahora es privado.'}`,
+              actionText: 'Continuar',
+              autoClose: true,
+              autoCloseDelay: 3000
+            });
+          } else {
+            console.error('Error en respuesta:', result);
+            setError(`Error cambiando visibilidad: ${result.error || 'Error desconocido'}`);
+          }
+        } catch (error) {
+          console.error('Error cambiando visibilidad:', error);
+          setError('Error de conexión al cambiar la visibilidad del agente');
+        } finally {
+          setChangingVisibility(false);
+        }
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0E0E10] text-white font-['Inter'] flex items-center justify-center">
@@ -348,17 +432,32 @@ export default function AgentDetailPage() {
     );
   }
 
-  if (!agent) {
+  if (error || (!loading && !agent)) {
     return (
       <div className="min-h-screen bg-[#0E0E10] text-white font-['Inter'] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-300 text-lg">Agente no encontrado</p>
+          <div className="mb-4">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-400" />
+            </div>
+            <p className="text-gray-300 text-lg mb-2">
+              {error || 'Agente no encontrado'}
+            </p>
+            <p className="text-gray-500 text-sm">
+              Es posible que el agente no exista o no tengas permisos para acceder a él.
+            </p>
+          </div>
           <Link href="/dashboard" className="text-[#3B82F6] hover:underline">
             Volver al Dashboard
           </Link>
         </div>
       </div>
     );
+  }
+
+  // TypeScript assertion: if we reach here, agent is not null
+  if (!agent) {
+    return null; // This should never happen due to the check above
   }
 
   return (
@@ -390,7 +489,7 @@ export default function AgentDetailPage() {
         <div className="max-w-6xl mx-auto">
           {/* Agent Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-2xl flex items-center justify-center">
                   <Bot className="w-8 h-8 text-[#0E0E10]" />
@@ -410,9 +509,39 @@ export default function AgentDetailPage() {
                     >
                       {agent.status === 'active' ? 'Activo' : 'Inactivo'}
                     </span>
+                    <span 
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        agent.isPublic ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'
+                      }`}
+                    >
+                      {agent.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                      {agent.isPublic ? 'Público' : 'Privado'}
+                    </span>
                     <span className="text-sm text-gray-500">ID: {agent.agentId}</span>
                   </div>
                 </div>
+              </div>
+              
+              {/* Botón de Publicar/Despublicar */}
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={toggleAgentVisibility}
+                  disabled={changingVisibility}
+                  className={`${
+                    agent.isPublic 
+                      ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                      : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-lg hover:shadow-blue-600/30 text-white'
+                  } font-semibold transition-all duration-300`}
+                >
+                  {changingVisibility ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : agent.isPublic ? (
+                    <Lock className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Globe className="w-4 h-4 mr-2" />
+                  )}
+                  {agent.isPublic ? 'Despublicar' : 'Publicar'}
+                </Button>
               </div>
             </div>
           </div>
@@ -1077,6 +1206,10 @@ export default function AgentDetailPage() {
           </div>
         </div>
       </main>
+      
+      {/* Modales */}
+      <ConfirmationModal />
+      <SuccessModal />
     </div>
   );
 } 

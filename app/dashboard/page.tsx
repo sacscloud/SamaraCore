@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/useAuth';
 import { useAgent } from '@/hooks/useAgent';
 import ThemeToggle from '@/components/ui/theme-toggle';
-import { Trash2, Copy, Check } from 'lucide-react';
+import { Trash2, Copy, Check, Globe, Lock } from 'lucide-react';
 import { useConfirmationModal } from '@/components/ui/confirmation-modal';
 
 export default function DashboardPage() {
@@ -116,6 +116,9 @@ export default function DashboardPage() {
             <nav className="hidden md:flex items-center gap-6">
               <Link href="/dashboard" className="text-sm font-medium text-[#00FFC3] px-3 py-2 rounded-lg bg-[#00FFC3]/10 border border-[#00FFC3]/20">
                 Dashboard
+              </Link>
+              <Link href="/agentes-publicos" className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-[#3B82F6] px-3 py-2 rounded-lg hover:bg-[#3B82F6]/10 transition-colors">
+                Agentes Públicos
               </Link>
             </nav>
           </div>
@@ -252,9 +255,21 @@ export default function DashboardPage() {
                           </Button>
                         </div>
                       </div>
-                      <CardTitle className="text-gray-900 dark:text-white group-hover:text-[#00FFC3] transition-colors">
-                        {agent.agentName}
-                      </CardTitle>
+                      <div className="flex items-center justify-between mb-2">
+                        <CardTitle className="text-gray-900 dark:text-white group-hover:text-[#00FFC3] transition-colors">
+                          {agent.agentName}
+                        </CardTitle>
+                        <span 
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                            agent.isPublic 
+                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                              : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
+                          }`}
+                        >
+                          {agent.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                          {agent.isPublic ? 'Público' : 'Privado'}
+                        </span>
+                      </div>
                       <CardDescription className="text-gray-400 mb-2">
                         {agent.description || 'Sin descripción'}
                       </CardDescription>

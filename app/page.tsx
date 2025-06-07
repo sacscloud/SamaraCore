@@ -14,6 +14,14 @@ export default function HomePage() {
             <span className="text-xl font-bold text-white">SamaraCore</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/agentes-publicos" className="group">
+              <Button 
+                variant="ghost" 
+                className="!text-gray-300 hover:!text-white hover:!bg-gray-800/50 !border !border-transparent hover:!border-gray-700/50 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-[#3B82F6]/20 !bg-transparent"
+              >
+                Agentes Públicos
+              </Button>
+            </Link>
             <Link href="/auth/login" className="group">
               <Button 
                 variant="ghost" 
@@ -572,6 +580,64 @@ export default function HomePage() {
                     <p className="text-gray-400 text-sm leading-relaxed">{item.description}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Public Agents Preview */}
+        <section className="py-20 px-6">
+          <div className="container mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                Prueba Agentes Públicos
+              </h2>
+              <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+                Descubre agentes creados por la comunidad. Pruébalos sin necesidad de registro.
+              </p>
+              <Link href="/agentes-publicos">
+                <Button size="lg" variant="outline" className="border-[#00FFC3] text-[#00FFC3] hover:bg-[#00FFC3]/10 hover:shadow-lg hover:shadow-[#00FFC3]/30 transition-all duration-300">
+                  Ver Todos los Agentes Públicos
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Sample Public Agents Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 hover:border-[#3B82F6]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#3B82F6]/10">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-xl flex items-center justify-center mb-4">
+                  <span className="text-lg">🤖</span>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Asistente de Escritura</h3>
+                <p className="text-gray-400 mb-4">Ayuda con redacción, corrección y mejora de textos</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[#00FFC3]">🔧 Utilidad</span>
+                  <span className="text-xs text-gray-500">Público</span>
+                </div>
+              </div>
+              
+              <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 hover:border-[#3B82F6]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#3B82F6]/10">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-xl flex items-center justify-center mb-4">
+                  <span className="text-lg">📊</span>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Analista de Datos</h3>
+                <p className="text-gray-400 mb-4">Interpreta y analiza información compleja</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[#00FFC3]">📊 Análisis</span>
+                  <span className="text-xs text-gray-500">Público</span>
+                </div>
+              </div>
+              
+              <div className="bg-gray-900/40 border border-gray-700/50 rounded-2xl p-6 hover:border-[#3B82F6]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#3B82F6]/10">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-xl flex items-center justify-center mb-4">
+                  <span className="text-lg">🎨</span>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Creativo Digital</h3>
+                <p className="text-gray-400 mb-4">Genera ideas creativas y contenido original</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[#00FFC3]">🎨 Creativo</span>
+                  <span className="text-xs text-gray-500">Público</span>
+                </div>
               </div>
             </div>
           </div>

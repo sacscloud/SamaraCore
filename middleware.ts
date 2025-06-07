@@ -8,13 +8,23 @@ export function middleware(request: NextRequest) {
   const protectedApiRoutes = [
     '/api/agents',
     '/api/users',
+    '/api/user',
     '/api/dashboard'
   ];
   
+  // Rutas de API públicas (excepciones)
+  const publicApiRoutes = [
+    '/api/agents/public-list'
+  ];
+  
   // Verificar si es una ruta de API que requiere autenticación
-  const isProtectedApiRoute = protectedApiRoutes.some(route => 
+  const isPublicApiRoute = publicApiRoutes.some(route => 
     pathname.startsWith(route)
   );
+  
+  const isProtectedApiRoute = protectedApiRoutes.some(route => 
+    pathname.startsWith(route)
+  ) && !isPublicApiRoute;
 
   if (isProtectedApiRoute) {
     // Para rutas de API, verificar solo si hay token de autorización (verificación básica)
