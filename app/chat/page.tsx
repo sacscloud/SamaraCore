@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import { useConversations, type Conversation, type Message } from '@/hooks/useConversations';
 import Markdown from '@/components/ui/markdown';
 import ThemeToggle from '@/components/ui/theme-toggle';
+import { useConfirmationModal } from '@/components/ui/confirmation-modal';
 import { 
   PaperAirplaneIcon,
   Bars3Icon,
@@ -45,6 +46,9 @@ export default function ChatPage() {
   const [shareModal, setShareModal] = useState<{show: boolean, shareId: string | null}>({show: false, shareId: null});
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [imageError, setImageError] = useState(false);
+  
+  // Modal de confirmación
+  const { showConfirmation, ConfirmationModal } = useConfirmationModal();
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -481,12 +485,19 @@ export default function ChatPage() {
                 <div className="px-2 pt-2 pb-1">
                   <div className="flex justify-end">
                     <button
-                      onClick={async () => {
-                        if (confirm('¿Estás seguro de eliminar TODAS las conversaciones? Esta acción no se puede deshacer.')) {
-                          const promises = conversations.map(conv => deleteConversation(conv.conversationId));
-                          await Promise.all(promises);
-                          setCurrentConversation(null);
-                        }
+                      onClick={() => {
+                        showConfirmation({
+                          title: 'Eliminar Todas las Conversaciones',
+                          description: '¿Estás seguro de eliminar TODAS las conversaciones? Esta acción eliminará permanentemente todo el historial de chat y no se puede deshacer.',
+                          confirmText: 'Sí, Eliminar Todas',
+                          cancelText: 'Cancelar',
+                          variant: 'danger',
+                          onConfirm: async () => {
+                            const promises = conversations.map(conv => deleteConversation(conv.conversationId));
+                            await Promise.all(promises);
+                            setCurrentConversation(null);
+                          }
+                        });
                       }}
                       className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-red-50 dark:hover:bg-red-600/20 rounded text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
                     >
@@ -817,6 +828,9 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal />
     </div>
   );
 }

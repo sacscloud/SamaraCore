@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAgent } from '@/hooks/useAgent';
 import ThemeToggle from '@/components/ui/theme-toggle';
 import { Trash2 } from 'lucide-react';
+import { useConfirmationModal } from '@/components/ui/confirmation-modal';
 
 export default function DashboardPage() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -16,6 +17,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const hasFetchedAgents = useRef(false);
   const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null);
+  const { showConfirmation, ConfirmationModal } = useConfirmationModal();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -43,24 +45,31 @@ export default function DashboardPage() {
     e.preventDefault();
     e.stopPropagation();
     
-    if (confirm(`¿Estás seguro de que deseas eliminar el agente "${agentName}"? Esta acción no se puede deshacer.`)) {
-      setDeletingAgentId(agentId);
-      
-      try {
-        const result = await deleteAgent(agentId);
+    showConfirmation({
+      title: 'Eliminar Agente',
+      description: `¿Estás seguro de que deseas eliminar el agente "${agentName}"? Esta acción no se puede deshacer y perderás toda su configuración.`,
+      confirmText: 'Sí, Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      onConfirm: async () => {
+        setDeletingAgentId(agentId);
         
-        if (result.success) {
-          await fetchAgents();
-        } else {
-          alert(`Error al eliminar el agente: ${result.error}`);
+        try {
+          const result = await deleteAgent(agentId);
+          
+          if (result.success) {
+            await fetchAgents();
+          } else {
+            throw new Error(result.error || 'Error al eliminar el agente');
+          }
+        } catch (error) {
+          console.error('Error al eliminar agente:', error);
+          throw error;
+        } finally {
+          setDeletingAgentId(null);
         }
-      } catch (error) {
-        console.error('Error al eliminar agente:', error);
-        alert(`Error inesperado al eliminar el agente: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-      } finally {
-        setDeletingAgentId(null);
       }
-    }
+    });
   };
 
   if (authLoading) {
@@ -240,6 +249,9 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal />
     </div>
   );
 } 
