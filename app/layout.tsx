@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/AuthProvider'
+import { ThemeProvider } from '@/lib/theme-context'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,13 +21,27 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" suppressHydrationWarning className="dark">
+    <html lang="es" className="dark" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
-        <div className="min-h-screen bg-[#0E0E10] text-white">
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </div>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem('theme') || 'dark';
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+              } catch (e) {
+                document.documentElement.classList.add('dark');
+              }
+            `,
+          }}
+        />
+        <ThemeProvider>
+          <div className="min-h-screen bg-white dark:bg-[#0E0E10] text-gray-900 dark:text-white">
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )

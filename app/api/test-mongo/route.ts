@@ -47,6 +47,29 @@ export async function GET(request: NextRequest) {
       console.log('ℹ️  Colección agents no existe aún');
     }
     
+    // Obtener agentes que no tienen responseFormat
+    const agentsWithoutResponseFormat = await db.collection('agents')
+      .find({ 'prompt.responseFormat': { $exists: false } })
+      .toArray();
+    
+    console.log(`Encontrados ${agentsWithoutResponseFormat.length} agentes sin responseFormat`);
+    
+    // Actualizar agentes para agregar responseFormat
+    if (agentsWithoutResponseFormat.length > 0) {
+      const updateResult = await db.collection('agents').updateMany(
+        { 'prompt.responseFormat': { $exists: false } },
+        { $set: { 'prompt.responseFormat': '' } }
+      );
+      
+      console.log(`Actualizados ${updateResult.modifiedCount} agentes`);
+    }
+    
+    // Verificar algunos agentes
+    const sampleAgents = await db.collection('agents')
+      .find({})
+      .limit(3)
+      .toArray();
+    
     const result = {
       success: true,
       message: 'MongoDB Atlas funciona correctamente',
@@ -59,6 +82,12 @@ export async function GET(request: NextRequest) {
           read: !!readDoc,
           deleted: true
         },
+        agentsWithoutResponseFormat: agentsWithoutResponseFormat.length,
+        sampleAgents: sampleAgents.map(agent => ({
+          agentId: agent.agentId,
+          agentName: agent.agentName,
+          prompt: agent.prompt
+        })),
         timestamp: new Date().toISOString()
       }
     };

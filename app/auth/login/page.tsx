@@ -49,34 +49,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0E0E10] text-white font-['Inter'] flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-[#0E0E10] flex items-center justify-center relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/5 via-transparent to-[#00FFC3]/5"></div>
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#3B82F6]/10 rounded-full blur-3xl"></div>
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#00FFC3]/10 rounded-full blur-3xl"></div>
-      
-      {/* Header */}
-      <header className="absolute top-0 left-0 right-0 border-b border-gray-800/50 backdrop-blur-sm z-50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <span className="text-sm font-bold text-[#0E0E10]">S</span>
-            </div>
-            <span className="text-xl font-bold text-white">SamaraCore</span>
-          </Link>
-          <Link href="/auth/register">
-            <Button 
-              variant="ghost" 
-              className="text-gray-300 hover:text-white hover:bg-gray-800/50 border border-transparent hover:border-gray-700/50 transition-all duration-300"
-            >
-              Crear Cuenta
-            </Button>
-          </Link>
-        </div>
-      </header>
 
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-md mx-auto px-6">
+      <div className="relative z-10 w-full max-w-md mx-auto px-6 pt-16">
         <Card className="bg-gray-900/40 border-gray-700/50 backdrop-blur-sm shadow-2xl hover:shadow-[#3B82F6]/10 transition-all duration-300">
           <CardHeader className="text-center pb-2">
             <div className="w-16 h-16 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-[#3B82F6]/30">
@@ -127,7 +107,7 @@ export default function LoginPage() {
               )}
               <Button 
                 type="submit" 
-                className="w-full h-12 bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-xl hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold text-base transition-all duration-300 hover:scale-[1.02]" 
+                className="w-full h-12 !bg-gradient-to-r !from-[#3B82F6] !to-[#00FFC3] hover:shadow-xl hover:shadow-[#3B82F6]/30 !text-[#0E0E10] font-semibold text-base transition-all duration-300 hover:scale-[1.02]" 
                 disabled={isLoading || isGoogleLoading}
               >
                 {isLoading ? (
@@ -141,22 +121,22 @@ export default function LoginPage() {
               </Button>
             </form>
             
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-700/50" />
+                          <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-700/50" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-gray-900/40 px-3 text-gray-400 font-medium tracking-wider">
+                    O continúa con
+                  </span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-gray-900/40 px-3 text-gray-400 font-medium tracking-wider">
-                  O continúa con
-                </span>
-              </div>
-            </div>
             
             <Button
               variant="outline"
               onClick={handleGoogleLogin}
               disabled={isLoading || isGoogleLoading}
-              className="w-full h-12 border-gray-600/50 text-gray-300 hover:text-white hover:bg-gray-800/50 hover:border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300"
+              className="w-full h-12 !border-gray-600/50 !text-gray-300 hover:!text-white hover:!bg-gray-800/50 hover:!border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300 !bg-transparent"
             >
               {isGoogleLoading ? (
                 <div className="flex items-center gap-2">

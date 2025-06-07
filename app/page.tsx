@@ -17,7 +17,7 @@ export default function HomePage() {
             <Link href="/auth/login" className="group">
               <Button 
                 variant="ghost" 
-                className="text-gray-300 hover:text-white hover:bg-gray-800/50 border border-transparent hover:border-gray-700/50 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-[#3B82F6]/20"
+                className="!text-gray-300 hover:!text-white hover:!bg-gray-800/50 !border !border-transparent hover:!border-gray-700/50 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-[#3B82F6]/20 !bg-transparent"
               >
                 Iniciar Sesión
               </Button>
@@ -52,7 +52,7 @@ export default function HomePage() {
                 <Link href="/auth/register" className="group">
                   <Button 
                     size="lg" 
-                    className="text-lg px-10 py-4 bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-2xl hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300 group-hover:scale-105 border-0"
+                    className="text-lg px-10 py-4 bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-2xl hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300 group-hover:scale-105 border-0 !bg-gradient-to-r !from-[#3B82F6] !to-[#00FFC3] !text-[#0E0E10]"
                   >
                     Empieza Gratis
                   </Button>
@@ -60,7 +60,7 @@ export default function HomePage() {
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  className="text-lg px-10 py-4 border-gray-600 text-gray-300 hover:text-white hover:bg-gray-800/50 hover:border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300"
+                  className="text-lg px-10 py-4 !border-gray-600 !text-gray-300 hover:!text-white hover:!bg-gray-800/50 hover:!border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300 !bg-transparent"
                 >
                   Ver Demo
                 </Button>
