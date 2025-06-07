@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import ThemeToggle from '@/components/ui/theme-toggle';
-import { ArrowLeft, ArrowRight, Bot, BookOpen, Target, Shield, FileText, ChevronLeft, ChevronRight, Check, Cpu, Sliders, Network, TestTube2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bot, BookOpen, Target, Shield, FileText, ChevronLeft, ChevronRight, Check, Cpu, Sliders, Network, TestTube2, Wand2 } from 'lucide-react';
+import { generatePrompts as autoGeneratePrompts, generateWhenToUse } from '@/lib/agent-helpers';
 
 // Definir categorías
 const AGENT_CATEGORIES = [
@@ -166,6 +167,10 @@ export default function NewAgentPage() {
 
   // Nuevo agentId para pasos 4 y 5
   const [createdAgentId, setCreatedAgentId] = useState('');
+  
+  // Estados para auto-generación
+  const [generatingPrompts, setGeneratingPrompts] = useState(false);
+  const [generatingWhenToUse, setGeneratingWhenToUse] = useState(false);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -208,28 +213,42 @@ export default function NewAgentPage() {
 
   // Función para generar prompts automáticamente (Paso 2 → 3)
   const generatePrompts = async () => {
-    setLoading(true);
+    if (!formData.categoria || !formData.descripcionLibre.trim()) {
+      alert('Por favor completa la categoría y descripción antes de generar prompts');
+      return;
+    }
+
+    setGeneratingPrompts(true);
+    
     try {
-      // TODO: Llamar al agente "Generador de Prompts Completos"
-      // Por ahora, mock data
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simular carga
+      const categoryName = AGENT_CATEGORIES.find(c => c.id === formData.categoria)?.name || '';
       
-      setFormData(prev => ({
-        ...prev,
-        prompt: {
-          base: `Eres un asistente especializado en ${prev.categoria}. ${prev.descripcionLibre}`,
-          objectives: 'Ayudar eficientemente a los usuarios\nProporcionar respuestas precisas y útiles\nMantener un tono profesional y amigable',
-          rules: 'Siempre verificar la información antes de responder\nSer claro y conciso en las explicaciones\nPedir aclaración si la consulta es ambigua',
-          examples: `Usuario: ¿Cómo puedes ayudarme?\nAgente: Soy un especialista en ${prev.categoria}. Puedo ayudarte con...\n\nUsuario: [Consulta específica]\nAgente: [Respuesta detallada y útil]`,
-          responseFormat: 'Responder en markdown cuando sea apropiado\nUsar emojis ocasionalmente para mayor claridad\nEstructurar respuestas largas con encabezados'
-        }
-      }));
+      // Llamar al agente generador de prompts
+      const result = await autoGeneratePrompts(categoryName, formData.descripcionLibre);
       
-      nextStep();
+      if (result.success && 'prompts' in result && result.prompts) {
+        // Auto-completar con los prompts generados por IA
+        setFormData(prev => ({
+          ...prev,
+          prompt: {
+            base: result.prompts.base,
+            objectives: result.prompts.objectives.join('\n'),
+            rules: result.prompts.rules.join('\n'),
+            examples: result.prompts.examples,
+            responseFormat: result.prompts.responseFormat
+          }
+        }));
+        
+        nextStep();
+      } else {
+        alert(`Error generando prompts: ${result.error}`);
+        console.error('Error:', result.error);
+      }
     } catch (error) {
-      alert('Error generando prompts automáticamente');
+      alert('Error conectando con el generador de prompts');
+      console.error('Error:', error);
     } finally {
-      setLoading(false);
+      setGeneratingPrompts(false);
     }
   };
 
@@ -449,10 +468,21 @@ export default function NewAgentPage() {
         </Button>
         <Button 
           onClick={generatePrompts}
-          disabled={loading || !formData.agentName.trim() || !formData.descripcionLibre.trim()}
+          disabled={generatingPrompts || !formData.agentName.trim() || !formData.descripcionLibre.trim()}
           className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-lg hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300"
         >
-          {loading ? '🤖 Generando prompts...' : 'Generar Prompts Automáticamente'} <ArrowRight className="w-4 h-4 ml-2" />
+          {generatingPrompts ? (
+            <>
+              <div className="w-4 h-4 border-2 border-[#0E0E10] border-t-transparent rounded-full animate-spin mr-2" />
+              🤖 Generando prompts...
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-4 h-4 mr-2" />
+              Generar Prompts Automáticamente
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </div>
@@ -465,9 +495,27 @@ export default function NewAgentPage() {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           Configuración del Agente
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           Revisa y ajusta la configuración generada automáticamente
         </p>
+        <Button
+          onClick={generatePrompts}
+          disabled={generatingPrompts}
+          variant="outline"
+          className="border-[#3B82F6] text-[#3B82F6] hover:bg-[#3B82F6]/10"
+        >
+          {generatingPrompts ? (
+            <>
+              <div className="w-4 h-4 border-2 border-[#3B82F6] border-t-transparent rounded-full animate-spin mr-2" />
+              Re-generando...
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-4 h-4 mr-2" />
+              Re-generar Prompts
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Configuración del Modelo */}
