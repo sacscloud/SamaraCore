@@ -17,11 +17,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    // Cargar tema guardado o detectar preferencia del sistema
+    // Cargar tema guardado o usar oscuro por defecto
     const savedTheme = localStorage.getItem('theme') as Theme;
-    const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     
-    const initialTheme = savedTheme || systemPreference;
+    const initialTheme = savedTheme || 'dark';
     const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     
     // Solo actualizar si es diferente al que ya está aplicado
