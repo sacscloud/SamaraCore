@@ -20,7 +20,7 @@ const AGENT_CATEGORIES = [
     name: 'Análisis',
     icon: '📊',
     description: 'Especialistas en análisis de datos, reportes y métricas',
-    color: 'from-blue-500 to-blue-600'
+    color: 'from-[#3B82F6] to-[#00FFC3]'
   },
   {
     id: 'contenido',
@@ -96,7 +96,7 @@ const AVAILABLE_MODELS = [
     description: 'Máxima calidad para análisis complejos y tareas que requieren razonamiento avanzado.',
     category: 'Análisis Profundo',
     icon: '🧠',
-    color: 'from-blue-500 to-blue-600'
+    color: 'from-[#3B82F6] to-[#00FFC3]'
   },
   {
     id: 'gpt-4-turbo',
@@ -491,7 +491,7 @@ Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
             key={category.id}
             className={`cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg ${
               formData.categoria === category.id 
-                ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                ? 'ring-2 ring-[#3B82F6] bg-gradient-to-r from-[#3B82F6]/10 to-[#00FFC3]/10' 
                 : 'bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-800/50'
             }`}
             onClick={() => {
@@ -683,7 +683,7 @@ Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
                 key={model.id}
                 className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
                   formData.configuracion.modelo === model.id 
-                    ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                    ? 'ring-2 ring-[#3B82F6] bg-gradient-to-r from-[#3B82F6]/10 to-[#00FFC3]/10' 
                     : 'bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                 }`}
                 onClick={() => handleConfigChange('modelo', model.id)}
@@ -849,7 +849,9 @@ Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <Network className="w-16 h-16 mx-auto text-[#3B82F6] mb-4" />
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-2xl flex items-center justify-center">
+            <Network className="w-8 h-8 text-[#0E0E10]" />
+          </div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             Configuración Multi-Agente
           </h2>
