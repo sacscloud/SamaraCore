@@ -1,7 +1,7 @@
 // Configuración de URLs de APIs
 export const API_CONFIG = {
   // URL del Core Agent Backend - configurable por entorno
-  CORE_AGENT_URL: process.env.NEXT_PUBLIC_CORE_AGENT_URL || 'http://localhost:4000',
+  CORE_AGENT_URL: process.env.NEXT_PUBLIC_CORE_AGENT_URL,
 
   // IDs de los agentes del sistema son unicos en la plataforma
   SYSTEM_AGENTS: {

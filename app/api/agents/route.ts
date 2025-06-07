@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       categoria: categoria || 'utilidad',
       configuracion: {
         modelo: configuracion?.modelo || 'gpt-4o-mini',
-        temperatura: configuracion?.temperatura ?? tempValidation.value
+        temperatura: tempValidation.value
       },
       user_id: authResult.userId,
       status: 'active',
