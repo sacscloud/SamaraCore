@@ -409,9 +409,17 @@ export default function ChatPage() {
            style={{overflow: sidebarOpen ? 'visible' : 'hidden'}}>
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-white">
-              {agent?.agentName || 'Chat'}
-            </h2>
+            <div className="flex items-center gap-2">
+              {agent?.agentName && (
+                <div className="relative">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div className="absolute inset-0 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                </div>
+              )}
+              <h2 className="text-lg font-semibold text-white">
+                {agent?.agentName || 'Chat'}
+              </h2>
+            </div>
             <button
               onClick={() => setSidebarOpen(false)}
               className="p-1 hover:bg-gray-700 rounded text-gray-300 hover:text-white"
