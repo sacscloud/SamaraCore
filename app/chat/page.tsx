@@ -8,6 +8,7 @@ import { useConversations, type Conversation, type Message } from '@/hooks/useCo
 import Markdown from '@/components/ui/markdown';
 import ThemeToggle from '@/components/ui/theme-toggle';
 import { useConfirmationModal } from '@/components/ui/confirmation-modal';
+import { useLoginRequiredModal } from '@/components/ui/login-required-modal';
 import { 
   PaperAirplaneIcon,
   Bars3Icon,
@@ -51,6 +52,9 @@ function ChatPageContent() {
   // Modal de confirmación
   const { showConfirmation, ConfirmationModal } = useConfirmationModal();
   
+  // Modal de login requerido
+  const { showLoginRequired, LoginRequiredModal } = useLoginRequiredModal();
+  
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -67,12 +71,8 @@ function ChatPageContent() {
     error: conversationsError
   } = useConversations(agentId || '');
 
-  // Verificar autenticación
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login');
-    }
-  }, [user, loading, router]);
+  // NO verificar autenticación aquí - permitir vista pública
+  // El interceptor de login se maneja al intentar enviar mensajes
 
   // Reset imagen error cuando cambie el usuario
   useEffect(() => {
@@ -83,11 +83,16 @@ function ChatPageContent() {
     try {
       setAgentError(null);
       
-      const token = await user?.getIdToken();
+      // Intentar cargar desde endpoint público primero
+      let response = await fetch(`/api/agents/public-list?agentId=${agentId}`);
       
-      const response = await fetch(`/api/agents/${agentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      // Si falla o no es público, intentar con autenticación si está disponible
+      if (!response.ok && user) {
+        const token = await user.getIdToken();
+        response = await fetch(`/api/agents/${agentId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
       
       if (response.ok) {
         const data = await response.json();
@@ -95,7 +100,7 @@ function ChatPageContent() {
       } else {
         const errorData = await response.text();
         console.error('Error del servidor:', errorData);
-        setAgentError(`Error ${response.status}: ${errorData}`);
+        setAgentError(`Agente no encontrado o no disponible`);
       }
     } catch (error) {
       console.error('Error cargando agente:', error);
@@ -103,12 +108,12 @@ function ChatPageContent() {
     }
   }, [agentId, user]);
 
-  // Cargar agente
+  // Cargar agente (sin requerir autenticación)
   useEffect(() => {
-    if (agentId && user) {
+    if (agentId) {
       loadAgent();
     }
-  }, [agentId, user, loadAgent]);
+  }, [agentId, loadAgent]);
 
   const handleNewConversation = useCallback(async () => {
     const conversation = await createConversation('Nueva conversación');
@@ -168,7 +173,20 @@ function ChatPageContent() {
   }, [message]);
 
   const handleSendMessage = async (messageContent: string = message) => {
-    if (!messageContent.trim() || !currentConversation || isSubmitting) return;
+    if (!messageContent.trim() || isSubmitting) return;
+
+    // Si el usuario no está autenticado, mostrar popup de login
+    if (!user) {
+      showLoginRequired();
+      return;
+    }
+
+    // Si no hay conversación actual, crear una nueva
+    if (!currentConversation) {
+      await handleNewConversation();
+      // La función se llamará de nuevo cuando se cree la conversación
+      return;
+    }
 
     setIsSubmitting(true);
     setMessage('');
@@ -314,27 +332,7 @@ function ChatPageContent() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white dark:bg-gray-900">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No autenticado</h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">Necesitas iniciar sesión para usar el chat</p>
-          <button
-            onClick={() => router.push('/auth/login')}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            Iniciar Sesión
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Permitir vista pública - no bloquear usuarios no autenticados
 
   if (!agentId) {
     return (
