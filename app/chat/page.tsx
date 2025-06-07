@@ -24,6 +24,7 @@ import {
   ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { ArrowPathIcon as ArrowPathSolidIcon } from '@heroicons/react/24/solid';
+import { API_CONFIG } from '@/lib/config';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -144,30 +145,24 @@ export default function ChatPage() {
 
   const loadAgent = async () => {
     try {
-      console.log('🔍 Cargando agente:', agentId);
       setAgentError(null);
       
       const token = await user?.getIdToken();
-      console.log('🔑 Token obtenido:', token ? 'Sí' : 'No');
       
       const response = await fetch(`/api/agents/${agentId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      console.log('📡 Respuesta del servidor:', response.status, response.statusText);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Datos del agente:', data);
-        console.log('🏷️ Nombre del agente:', data.agent?.agentName);
         setAgent(data.agent);
       } else {
         const errorData = await response.text();
-        console.error('❌ Error del servidor:', errorData);
+        console.error('Error del servidor:', errorData);
         setAgentError(`Error ${response.status}: ${errorData}`);
       }
     } catch (error) {
-      console.error('💥 Error cargando agente:', error);
+      console.error('Error cargando agente:', error);
       setAgentError(error instanceof Error ? error.message : 'Error desconocido');
     }
   };
@@ -195,7 +190,7 @@ export default function ChatPage() {
         }));
 
         // Enviar al agente
-        const response = await fetch(`http://localhost:4000/execute/${agentId}`, {
+        const response = await fetch(API_CONFIG.EXECUTE_AGENT(agentId!), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -685,7 +680,7 @@ export default function ChatPage() {
                 </svg>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                ¡Hola! Soy {agent?.name || 'tu asistente'}
+                ¡Hola! Soy {agent?.agentName || 'tu asistente'}
               </h3>
               <p className="text-gray-600 dark:text-gray-300 max-w-md mb-6">
                 {agent?.description || 'Estoy aquí para ayudarte. ¿En qué puedo asistirte hoy?'}
