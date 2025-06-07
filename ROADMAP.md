@@ -360,13 +360,13 @@ SamaraChat('init', {
 
 | Fase | Duración | Milestone | Validación |
 |------|----------|-----------|------------|
-| **1** | 1 semana | Agentes básicos funcionando | 3 agentes diferentes ejecutándose |
-| **2** | 3-4 días | Multi-agente automático | Orquestación funcionando |
-| **3** | 1 semana | Herramientas integradas | MongoDB + HTTP tools working |
-| **4** | 3-4 días | UX pulida | Experiencia fluida end-to-end |
-| **5** | 1 semana | Deployment channels | Slack + Discord + REST |
-| **6** | 1-2 semanas | Ecosystem completo | MCP + LangChain + Custom tools |
-| **7** | 1 semana | Widget embebido | Chat funcionando en sitios externos |
+| **1** | 2 horas | Agentes básicos funcionando | 3 agentes diferentes ejecutándose |
+| **2** | 4 horas | Multi-agente automático | Orquestación funcionando |
+| **3** | 3 dias | Herramientas integradas | MongoDB + HTTP tools working |
+| **4** | 4 horas | UX pulida | Experiencia fluida end-to-end |
+| **5** | 6 horas | Deployment channels | Slack + Discord + REST |
+| **6** | 7 horas| Ecosystem completo | MCP + LangChain + Custom tools |
+| **7** | 1 dia | Widget embebido | Chat funcionando en sitios externos |
 
 **Total**: 6-7 semanas para MVP completo + Widget
 
@@ -381,7 +381,7 @@ SamaraChat('init', {
 - [✅] Code review y testing básico
 
 ###  Fase 2 Completa:
-- [ ] Agente principal llama automáticamente sub-agentes
+- [✅] Agente principal llama automáticamente sub-agentes
 - [ ] Orquestación se puede enable/disable desde UI
 - [ ] Resultados se combinan correctamente
 - [ ] Control de profundidad funcionando

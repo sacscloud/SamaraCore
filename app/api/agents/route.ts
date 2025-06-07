@@ -4,6 +4,25 @@ import { ObjectId } from 'mongodb';
 import { nanoid } from 'nanoid';
 import { verifyFirebaseAuth } from '@/lib/firebase-auth';
 
+// Función auxiliar para validar temperatura
+function validateTemperature(temperatura: any): { isValid: boolean; value: number; error?: string } {
+  if (temperatura === null || temperatura === undefined) {
+    return { isValid: true, value: 0.7 }; // valor por defecto
+  }
+  
+  const temp = Number(temperatura);
+  
+  if (isNaN(temp)) {
+    return { isValid: false, value: 0.7, error: 'La temperatura debe ser un número' };
+  }
+  
+  if (temp < 0 || temp > 1) {
+    return { isValid: false, value: 0.7, error: 'La temperatura debe estar entre 0 y 1' };
+  }
+  
+  return { isValid: true, value: temp };
+}
+
 // GET - Listar agentes del usuario
 export async function GET(request: NextRequest) {
   // Verificar autenticación
@@ -47,7 +66,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { 
       agentName, 
-      description, 
+      description,
+      categoria,
+      configuracion,
       prompt = {},
       subAgents = [],
       orchestration = {}
@@ -65,6 +86,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         success: false, 
         error: 'El nombre del agente debe tener entre 3 y 50 caracteres' 
+      }, { status: 400 });
+    }
+
+    // Validar temperatura si se proporciona
+    const tempValidation = validateTemperature(configuracion?.temperatura);
+    if (!tempValidation.isValid) {
+      return NextResponse.json({ 
+        success: false, 
+        error: tempValidation.error 
       }, { status: 400 });
     }
 
@@ -90,6 +120,11 @@ export async function POST(request: NextRequest) {
       agentId,
       agentName: agentName.trim(),
       description: description?.trim() || '',
+      categoria: categoria || 'utilidad',
+      configuracion: {
+        modelo: configuracion?.modelo || 'gpt-4o-mini',
+        temperatura: tempValidation.value
+      },
       user_id: authResult.userId,
       status: 'active',
       prompt: {
@@ -147,7 +182,9 @@ export async function PUT(request: NextRequest) {
     const { 
       agentId,
       agentName, 
-      description, 
+      description,
+      categoria,
+      configuracion,
       prompt,
       status,
       // Nuevos campos para Fase 2: Multi-Agente
@@ -194,6 +231,26 @@ export async function PUT(request: NextRequest) {
 
     if (description !== undefined) {
       updateFields.description = description.trim();
+    }
+
+    if (categoria !== undefined) {
+      updateFields.categoria = categoria;
+    }
+
+    if (configuracion !== undefined) {
+      // Validar temperatura si se proporciona
+      const tempValidation = validateTemperature(configuracion.temperatura);
+      if (!tempValidation.isValid) {
+        return NextResponse.json({ 
+          success: false, 
+          error: tempValidation.error 
+        }, { status: 400 });
+      }
+      
+      updateFields.configuracion = {
+        modelo: configuracion.modelo || existingAgent.configuracion?.modelo || 'gpt-4o-mini',
+        temperatura: configuracion.temperatura !== undefined ? tempValidation.value : (existingAgent.configuracion?.temperatura ?? 0.7)
+      };
     }
 
     if (prompt !== undefined) {
