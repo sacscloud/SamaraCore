@@ -606,6 +606,8 @@ export default function ChatPage() {
                   onCopy={() => handleCopyMessage(msg.content)}
                   onRegenerate={msg.role === 'assistant' ? () => handleRegenerateResponse(msg.id) : undefined}
                   isRegenerating={regeneratingMessage === msg.id}
+                  userName={getUserDisplayName()}
+                  agentName={agent?.agentName || 'Asistente'}
                 />
               ))}
               
@@ -623,7 +625,7 @@ export default function ChatPage() {
 
         {/* Input */}
         <div className="bg-gray-800 border-t border-gray-700 p-4">
-          <div className="flex items-end gap-2">
+          <div className="flex items-start gap-2">
             <div className="flex-1 relative">
               <textarea
                 ref={textareaRef}
@@ -644,7 +646,7 @@ export default function ChatPage() {
             <button
               onClick={() => handleSendMessage()}
               disabled={!message.trim() || isSubmitting || !currentConversation}
-              className="flex items-center justify-center p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center h-[44px] w-[44px] bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <PaperAirplaneIcon className="w-5 h-5" />
             </button>
@@ -856,12 +858,16 @@ function MessageBubble({
   message, 
   onCopy,
   onRegenerate,
-  isRegenerating
+  isRegenerating,
+  userName,
+  agentName
 }: {
   message: Message;
   onCopy: () => void;
   onRegenerate?: () => void;
   isRegenerating?: boolean;
+  userName: string;
+  agentName: string;
 }) {
   const [showActions, setShowActions] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -879,6 +885,11 @@ function MessageBubble({
       onMouseLeave={() => setShowActions(false)}
     >
       <div className={`max-w-[80%] ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-800 border border-gray-700 text-white'} rounded-lg p-4 relative group`}>
+        {/* Nombre del remitente */}
+        <div className={`text-xs font-medium mb-2 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-300'}`}>
+          {message.role === 'user' ? userName : agentName}
+        </div>
+        
         {message.role === 'assistant' ? (
           <Markdown content={message.content} />
         ) : (
