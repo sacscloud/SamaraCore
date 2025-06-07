@@ -13,6 +13,16 @@ import ThemeToggle from '@/components/ui/theme-toggle';
 import { ArrowLeft, ArrowRight, Bot, BookOpen, Target, Shield, FileText, ChevronLeft, ChevronRight, Check, Cpu, Sliders, Network, TestTube2, Wand2 } from 'lucide-react';
 import { generatePrompts as autoGeneratePrompts, generateWhenToUse } from '@/lib/agent-helpers';
 
+// Definir tipos
+interface SubAgent {
+  agentId: string;
+  agentName: string;
+  categoria: string;
+  descripcionLibre: string;
+  cuandoUsar: string;
+  priority: number;
+}
+
 // Definir categorías
 const AGENT_CATEGORIES = [
   {
@@ -155,7 +165,7 @@ export default function NewAgentPage() {
     },
     
     // Paso 4: Multi-agente
-    subAgents: [],
+    subAgents: [] as SubAgent[],
     orchestration: {
       enabled: false,
       maxDepth: 3
@@ -209,6 +219,11 @@ export default function NewAgentPage() {
   const nextStep = () => {
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
+      
+      // Si vamos al paso 4 (multi-agente), sincronizar los estados
+      if (currentStep + 1 === 4) {
+        setSelectedSubAgents(formData.subAgents);
+      }
     }
   };
 
@@ -315,6 +330,15 @@ Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
               : sa
           )
         );
+        // También actualizar formData.subAgents
+        setFormData(prev => ({
+          ...prev,
+          subAgents: prev.subAgents.map(sa => 
+            sa.agentId === subAgent.agentId 
+              ? { ...sa, cuandoUsar: result.cuandoUsar }
+              : sa
+          )
+        }));
       } else {
         console.error('Error generando relación:', 'error' in result ? result.error : 'Error desconocido');
       }
@@ -337,6 +361,11 @@ Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
     };
     
     setSelectedSubAgents(prev => [...prev, subAgent]);
+    // También actualizar formData.subAgents
+    setFormData(prev => ({
+      ...prev,
+      subAgents: [...prev.subAgents, subAgent]
+    }));
     setShowAgentSelector(false);
     
     // Generar automáticamente el "cuandoUsar" para esta relación
@@ -346,6 +375,11 @@ Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
   // Remover sub-agente
   const removeSubAgent = (agentId: string) => {
     setSelectedSubAgents(prev => prev.filter(sa => sa.agentId !== agentId));
+    // También actualizar formData.subAgents
+    setFormData(prev => ({
+      ...prev,
+      subAgents: prev.subAgents.filter(sa => sa.agentId !== agentId)
+    }));
   };
 
   // Actualizar "cuandoUsar" de sub-agente
@@ -355,6 +389,13 @@ Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
         sa.agentId === agentId ? { ...sa, cuandoUsar } : sa
       )
     );
+    // También actualizar formData.subAgents
+    setFormData(prev => ({
+      ...prev,
+      subAgents: prev.subAgents.map(sa => 
+        sa.agentId === agentId ? { ...sa, cuandoUsar } : sa
+      )
+    }));
   };
 
   // Función para guardar agente en MongoDB (Paso 3 → 4)
@@ -392,9 +433,9 @@ Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
           configuracion: formData.configuracion,
           prompt: cleanedPrompt,
           // Configuración multi-agente
-          subAgents: selectedSubAgents,
+          subAgents: formData.subAgents,
           orchestration: {
-            enabled: selectedSubAgents.length > 0,
+            enabled: formData.subAgents.length > 0,
             maxDepth: 3
           }
         }),

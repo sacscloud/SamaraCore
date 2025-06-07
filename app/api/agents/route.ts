@@ -48,7 +48,9 @@ export async function POST(request: NextRequest) {
     const { 
       agentName, 
       description, 
-      prompt = {}
+      prompt = {},
+      subAgents = [],
+      orchestration = {}
     } = body;
 
     // Validaciones
@@ -97,12 +99,12 @@ export async function POST(request: NextRequest) {
         examples: prompt.examples || '',
         responseFormat: prompt.responseFormat || ''
       },
-      // Configuraciones futuras (para próximas fases)
+      // Usar los valores del frontend en lugar de hardcodear
       tools: [],
-      subAgents: [],
+      subAgents: subAgents || [],
       orchestration: {
-        enabled: false,
-        maxDepth: 3
+        enabled: orchestration.enabled || false,
+        maxDepth: orchestration.maxDepth || 3
       },
       createdAt: now,
       updatedAt: now
@@ -211,10 +213,12 @@ export async function PUT(request: NextRequest) {
     // Nuevos campos para Fase 2: Multi-Agente
     if (subAgents !== undefined) {
       if (Array.isArray(subAgents)) {
-        // Validar que los sub-agentes existen y no incluyen el agente actual
-        const validSubAgents = subAgents.filter(subAgentId => 
-          subAgentId !== agentId && typeof subAgentId === 'string'
-        );
+        // Validar que los sub-agentes no incluyen el agente actual
+        const validSubAgents = subAgents.filter(subAgent => {
+          // Si es un objeto, verificar por agentId, si es string, verificar directamente
+          const subAgentId = typeof subAgent === 'object' ? subAgent.agentId : subAgent;
+          return subAgentId !== agentId;
+        });
         updateFields.subAgents = validSubAgents;
       }
     }
