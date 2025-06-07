@@ -364,7 +364,8 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen bg-gray-900">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden bg-gray-800 border-r border-gray-700`}>
+      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-gray-800 border-r border-gray-700 relative`} 
+           style={{overflow: sidebarOpen ? 'visible' : 'hidden'}}>
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">
@@ -429,7 +430,7 @@ export default function ChatPage() {
         </div>
 
         {/* Lista de conversaciones */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overflow-x-visible">
           {conversationsLoading ? (
             <div className="p-4 text-center text-gray-400">
               <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
@@ -460,7 +461,29 @@ export default function ChatPage() {
                   onDelete={deleteConversation}
                   onRename={updateTitle}
                   onMove={moveToFolder}
-                  onShare={toggleShare}
+                  onShare={async (id: string, shared: boolean) => {
+                    if (shared) {
+                      // Compartir y mostrar modal
+                      const result = await toggleShare(id, true);
+                      if (result) {
+                        // Si es la conversación actual, actualizar el estado
+                        if (currentConversation?.conversationId === id) {
+                          setCurrentConversation(result);
+                        }
+                        if (result.shareId) {
+                          setShareModal({show: true, shareId: result.shareId});
+                        }
+                      }
+                      return !!result;
+                    } else {
+                      // Dejar de compartir
+                      const result = await toggleShare(id, false);
+                      if (result && currentConversation?.conversationId === id) {
+                        setCurrentConversation(result);
+                      }
+                      return !!result;
+                    }
+                  }}
                   folders={folders}
                 />
               ))}
@@ -506,12 +529,18 @@ export default function ChatPage() {
                   onClick={async () => {
                     if (currentConversation.shared) {
                       // Si ya está compartido, dejar de compartir
-                      await toggleShare(currentConversation.conversationId, false);
+                      const result = await toggleShare(currentConversation.conversationId, false);
+                      if (result) {
+                        setCurrentConversation(result);
+                      }
                     } else {
                       // Si no está compartido, compartir y mostrar modal
                       const result = await toggleShare(currentConversation.conversationId, true);
-                      if (result && result.shareId) {
-                        setShareModal({show: true, shareId: result.shareId});
+                      if (result) {
+                        setCurrentConversation(result);
+                        if (result.shareId) {
+                          setShareModal({show: true, shareId: result.shareId});
+                        }
                       }
                     }
                   }}
@@ -704,6 +733,16 @@ function ConversationItem({
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(conversation.title);
+  const [menuPosition, setMenuPosition] = useState({x: 0, y: 0});
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    if (showMenu) {
+      const handleClickOutside = () => setShowMenu(false);
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showMenu]);
 
   const handleRename = async () => {
     if (editTitle.trim() && editTitle !== conversation.title) {
@@ -744,6 +783,11 @@ function ConversationItem({
       <button
         onClick={(e) => {
           e.stopPropagation();
+          const rect = e.currentTarget.getBoundingClientRect();
+          setMenuPosition({
+            x: rect.left - 160, // Ancho del menú hacia la izquierda
+            y: rect.bottom + 5   // Debajo del botón
+          });
           setShowMenu(!showMenu);
         }}
         className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-600 rounded text-gray-400 hover:text-white"
@@ -752,7 +796,13 @@ function ConversationItem({
       </button>
 
       {showMenu && (
-        <div className="absolute top-8 right-2 bg-gray-700 border border-gray-600 rounded-lg shadow-lg z-10 py-1 min-w-[160px]">
+        <div 
+          className="fixed bg-gray-700 border border-gray-600 rounded-lg shadow-lg z-50 py-1 min-w-[160px]"
+          style={{
+            left: `${menuPosition.x}px`,
+            top: `${menuPosition.y}px`
+          }}
+        >
           <button
             onClick={() => {
               setIsEditing(true);
@@ -764,8 +814,8 @@ function ConversationItem({
             Renombrar
           </button>
           <button
-            onClick={() => {
-              onShare(conversation.conversationId, !conversation.shared);
+            onClick={async () => {
+              await onShare(conversation.conversationId, !conversation.shared);
               setShowMenu(false);
             }}
             className="w-full px-3 py-2 text-left text-sm hover:bg-gray-600 flex items-center gap-2 text-gray-300 hover:text-white"
