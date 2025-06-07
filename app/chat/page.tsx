@@ -43,6 +43,7 @@ export default function ChatPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [regeneratingMessage, setRegeneratingMessage] = useState<string | null>(null);
+  const [shareModal, setShareModal] = useState<{show: boolean, shareId: string | null}>({show: false, shareId: null});
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -502,7 +503,18 @@ export default function ChatPage() {
                   <ArrowDownTrayIcon className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={() => toggleShare(currentConversation.conversationId, !currentConversation.shared)}
+                  onClick={async () => {
+                    if (currentConversation.shared) {
+                      // Si ya está compartido, dejar de compartir
+                      await toggleShare(currentConversation.conversationId, false);
+                    } else {
+                      // Si no está compartido, compartir y mostrar modal
+                      const result = await toggleShare(currentConversation.conversationId, true);
+                      if (result && result.shareId) {
+                        setShareModal({show: true, shareId: result.shareId});
+                      }
+                    }
+                  }}
                   className={`p-2 rounded-lg ${currentConversation.shared ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300 hover:text-white'}`}
                   title={currentConversation.shared ? 'Dejar de compartir' : 'Compartir conversación'}
                 >
@@ -604,6 +616,67 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de compartir */}
+      {shareModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">¡Conversación compartida!</h3>
+              <button
+                onClick={() => setShareModal({show: false, shareId: null})}
+                className="text-gray-400 hover:text-white"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-gray-300 mb-4">
+              Tu conversación ahora es pública. Cualquier persona con este enlace puede verla:
+            </p>
+            
+            <div className="bg-gray-700 p-3 rounded border border-gray-600 mb-4">
+              <div className="flex items-center justify-between">
+                <code className="text-blue-400 text-sm break-all">
+                  {`${window.location.origin}/conversations/${shareModal.shareId}`}
+                </code>
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(`${window.location.origin}/conversations/${shareModal.shareId}`);
+                    // Mostrar feedback visual de copiado
+                  }}
+                  className="ml-2 p-1 hover:bg-gray-600 rounded text-gray-300 hover:text-white"
+                  title="Copiar enlace"
+                >
+                  <ClipboardIcon className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="text-xs text-gray-400 mb-4">
+              💡 Tip: Puedes dejar de compartir esta conversación en cualquier momento usando el botón de compartir nuevamente.
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(`${window.location.origin}/conversations/${shareModal.shareId}`);
+                  setShareModal({show: false, shareId: null});
+                }}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Copiar enlace
+              </button>
+              <button
+                onClick={() => setShareModal({show: false, shareId: null})}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
