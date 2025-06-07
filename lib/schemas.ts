@@ -10,7 +10,7 @@ export const PromptSchema = z.object({
 
 export const ConfiguracionSchema = z.object({
   modelo: z.string().default('gpt-4o-mini'),
-  temperatura: z.number().min(0).max(1).default(0.7)
+  temperatura: z.number().min(0, 'La temperatura debe ser mayor o igual a 0').max(1, 'La temperatura debe ser menor o igual a 1').default(0.7)
 });
 
 export const AgentSchema = z.object({

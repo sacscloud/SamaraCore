@@ -4,6 +4,25 @@ import { ObjectId } from 'mongodb';
 import { nanoid } from 'nanoid';
 import { verifyFirebaseAuth } from '@/lib/firebase-auth';
 
+// Función auxiliar para validar temperatura
+function validateTemperature(temperatura: any): { isValid: boolean; value: number; error?: string } {
+  if (temperatura === null || temperatura === undefined) {
+    return { isValid: true, value: 0.7 }; // valor por defecto
+  }
+  
+  const temp = Number(temperatura);
+  
+  if (isNaN(temp)) {
+    return { isValid: false, value: 0.7, error: 'La temperatura debe ser un número' };
+  }
+  
+  if (temp < 0 || temp > 1) {
+    return { isValid: false, value: 0.7, error: 'La temperatura debe estar entre 0 y 1' };
+  }
+  
+  return { isValid: true, value: temp };
+}
+
 // GET - Listar agentes del usuario
 export async function GET(request: NextRequest) {
   // Verificar autenticación
@@ -70,6 +89,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Validar temperatura si se proporciona
+    const tempValidation = validateTemperature(configuracion?.temperatura);
+    if (!tempValidation.isValid) {
+      return NextResponse.json({ 
+        success: false, 
+        error: tempValidation.error 
+      }, { status: 400 });
+    }
+
     const client = await clientPromise;
     const db = client.db('samaracore');
     
@@ -95,7 +123,7 @@ export async function POST(request: NextRequest) {
       categoria: categoria || 'utilidad',
       configuracion: {
         modelo: configuracion?.modelo || 'gpt-4o-mini',
-        temperatura: configuracion?.temperatura || 0.7
+        temperatura: configuracion?.temperatura ?? tempValidation.value
       },
       user_id: authResult.userId,
       status: 'active',
@@ -154,7 +182,9 @@ export async function PUT(request: NextRequest) {
     const { 
       agentId,
       agentName, 
-      description, 
+      description,
+      categoria,
+      configuracion,
       prompt,
       status,
       // Nuevos campos para Fase 2: Multi-Agente
@@ -201,6 +231,26 @@ export async function PUT(request: NextRequest) {
 
     if (description !== undefined) {
       updateFields.description = description.trim();
+    }
+
+    if (categoria !== undefined) {
+      updateFields.categoria = categoria;
+    }
+
+    if (configuracion !== undefined) {
+      // Validar temperatura si se proporciona
+      const tempValidation = validateTemperature(configuracion.temperatura);
+      if (!tempValidation.isValid) {
+        return NextResponse.json({ 
+          success: false, 
+          error: tempValidation.error 
+        }, { status: 400 });
+      }
+      
+      updateFields.configuracion = {
+        modelo: configuracion.modelo || existingAgent.configuracion?.modelo || 'gpt-4o-mini',
+        temperatura: configuracion.temperatura !== undefined ? tempValidation.value : (existingAgent.configuracion?.temperatura ?? 0.7)
+      };
     }
 
     if (prompt !== undefined) {
