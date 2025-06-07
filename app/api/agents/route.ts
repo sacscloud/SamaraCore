@@ -48,7 +48,9 @@ export async function POST(request: NextRequest) {
     const { 
       agentName, 
       description, 
-      prompt = {}
+      prompt = {},
+      subAgents = [],
+      orchestration = {}
     } = body;
 
     // Validaciones
@@ -97,12 +99,12 @@ export async function POST(request: NextRequest) {
         examples: prompt.examples || '',
         responseFormat: prompt.responseFormat || ''
       },
-      // Configuraciones futuras (para próximas fases)
+      // Usar los valores del frontend en lugar de hardcodear
       tools: [],
-      subAgents: [],
+      subAgents: subAgents || [],
       orchestration: {
-        enabled: false,
-        maxDepth: 3
+        enabled: orchestration.enabled || false,
+        maxDepth: orchestration.maxDepth || 3
       },
       createdAt: now,
       updatedAt: now
@@ -147,7 +149,10 @@ export async function PUT(request: NextRequest) {
       agentName, 
       description, 
       prompt,
-      status
+      status,
+      // Nuevos campos para Fase 2: Multi-Agente
+      subAgents,
+      orchestration
     } = body;
 
     // Validaciones
@@ -203,6 +208,29 @@ export async function PUT(request: NextRequest) {
 
     if (status !== undefined && ['active', 'inactive'].includes(status)) {
       updateFields.status = status;
+    }
+
+    // Nuevos campos para Fase 2: Multi-Agente
+    if (subAgents !== undefined) {
+      if (Array.isArray(subAgents)) {
+        // Validar que los sub-agentes no incluyen el agente actual
+        const validSubAgents = subAgents.filter(subAgent => {
+          // Si es un objeto, verificar por agentId, si es string, verificar directamente
+          const subAgentId = typeof subAgent === 'object' ? subAgent.agentId : subAgent;
+          return subAgentId !== agentId;
+        });
+        updateFields.subAgents = validSubAgents;
+      }
+    }
+
+    if (orchestration !== undefined) {
+      updateFields.orchestration = {
+        enabled: orchestration.enabled || false,
+        maxDepth: Math.max(1, Math.min(5, orchestration.maxDepth || 3)),
+        autoTriggerConditions: Array.isArray(orchestration.autoTriggerConditions) 
+          ? orchestration.autoTriggerConditions.filter((c: any) => typeof c === 'string' && c.trim() !== '')
+          : []
+      };
     }
 
     // Actualizar agente

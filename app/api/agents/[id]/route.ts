@@ -21,14 +21,14 @@ export async function GET(
       agentId: params.id,
       user_id: authResult.userId
     });
-
+    
     if (!agent) {
       return NextResponse.json(
         { success: false, error: 'Agente no encontrado' },
         { status: 404 }
       );
     }
-
+    
     return NextResponse.json({ 
       success: true, 
       agent: { ...agent, _id: agent._id.toString() }
@@ -96,6 +96,57 @@ export async function PUT(
       );
     }
     
+    return NextResponse.json(
+      { success: false, error: 'Error al actualizar agente' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  // Verificar autenticación
+  const authResult = await verifyFirebaseAuth(request);
+  if (!authResult.authenticated) {
+    return authResult.response;
+  }
+
+  try {
+    const body = await request.json();
+    
+    const client = await clientPromise;
+    const db = client.db('samaracore');
+    
+    // Actualización parcial - solo los campos enviados
+    const result = await db.collection('agents').updateOne(
+      { 
+        agentId: params.id,
+        user_id: authResult.userId // Solo el propietario puede actualizar
+      },
+      { 
+        $set: {
+          ...body,
+          updatedBy: authResult.userId,
+          updatedAt: new Date()
+        }
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Agente no encontrado o sin permisos' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Agente actualizado correctamente'
+    });
+  } catch (error) {
+    console.error('Error updating agent:', error);
     return NextResponse.json(
       { success: false, error: 'Error al actualizar agente' },
       { status: 500 }

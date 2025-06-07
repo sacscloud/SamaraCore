@@ -37,10 +37,10 @@ export default function RootLayout({
         />
         <ThemeProvider>
           <div className="min-h-screen bg-white dark:bg-[#0E0E10] text-gray-900 dark:text-white">
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </div>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </div>
         </ThemeProvider>
       </body>
     </html>
