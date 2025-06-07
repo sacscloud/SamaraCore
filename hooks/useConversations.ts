@@ -41,7 +41,12 @@ export const useConversations = (agentId: string) => {
 
   // Cargar conversaciones del agente
   const loadConversations = useCallback(async (folder?: string, search?: string) => {
-    if (!user || userLoading) return;
+    if (!user || userLoading) {
+      // Si no hay usuario, simplemente limpiar las conversaciones sin mostrar error
+      setConversations([]);
+      setError(null);
+      return;
+    }
     
     setLoading(true);
     setError(null);
@@ -69,6 +74,11 @@ export const useConversations = (agentId: string) => {
 
   // Crear nueva conversación
   const createConversation = useCallback(async (title?: string, folder?: string) => {
+    // Si no hay usuario, no hacer nada (el error se maneja en el componente)
+    if (!user) {
+      return null;
+    }
+    
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/conversations', {
@@ -88,10 +98,15 @@ export const useConversations = (agentId: string) => {
       setError(err instanceof Error ? err.message : 'Error creando conversación');
       return null;
     }
-  }, [agentId, getAuthHeaders]);
+  }, [agentId, getAuthHeaders, user]);
 
   // Agregar mensaje a conversación
   const addMessage = useCallback(async (conversationId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
+    // Si no hay usuario, no hacer nada
+    if (!user) {
+      return null;
+    }
+    
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/conversations', {
@@ -122,7 +137,7 @@ export const useConversations = (agentId: string) => {
       setError(err instanceof Error ? err.message : 'Error agregando mensaje');
       return null;
     }
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, user]);
 
   // Actualizar título de conversación
   const updateTitle = useCallback(async (conversationId: string, title: string) => {

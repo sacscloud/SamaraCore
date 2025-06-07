@@ -116,12 +116,18 @@ function ChatPageContent() {
   }, [agentId, loadAgent]);
 
   const handleNewConversation = useCallback(async () => {
+    // Si el usuario no está autenticado, mostrar popup de login
+    if (!user) {
+      showLoginRequired();
+      return;
+    }
+
     const conversation = await createConversation('Nueva conversación');
     if (conversation) {
       setCurrentConversation(conversation);
       setSearchTerm('');
     }
-  }, [createConversation]);
+  }, [createConversation, user, showLoginRequired]);
 
   // Seleccionar conversación inicial
   useEffect(() => {
