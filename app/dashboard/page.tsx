@@ -34,7 +34,7 @@ export default function DashboardPage() {
     if (!user) {
       hasFetchedAgents.current = false;
     }
-  }, [user]);
+  }, [user, fetchAgents]);
 
   const handleLogout = async () => {
     await logout();

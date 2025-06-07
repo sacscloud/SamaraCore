@@ -518,8 +518,8 @@ export default function HomePage() {
               <div className="p-12 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-3xl border border-gray-700/50 backdrop-blur-sm">
                 <div className="text-6xl mb-6">🧪</div>
                 <blockquote className="text-2xl font-light text-gray-200 mb-8 leading-relaxed italic">
-                  "Agente que analiza 1 año completo de datos de sucursales en segundos — 
-                  algo que antes tomaba semanas."
+                  &ldquo;Agente que analiza 1 año completo de datos de sucursales en segundos — 
+                  algo que antes tomaba semanas.&rdquo;
                 </blockquote>
                 <div className="flex items-center justify-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-full"></div>
