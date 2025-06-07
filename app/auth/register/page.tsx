@@ -56,33 +56,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0E0E10] text-white font-['Inter'] flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/5 via-transparent to-[#00FFC3]/5"></div>
       <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-[#3B82F6]/10 rounded-full blur-3xl"></div>
       <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-[#00FFC3]/10 rounded-full blur-3xl"></div>
-      
-      {/* Header */}
-      <header className="absolute top-0 left-0 right-0 border-b border-gray-800/50 backdrop-blur-sm z-50">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <span className="text-sm font-bold text-[#0E0E10]">S</span>
-            </div>
-            <span className="text-xl font-bold text-white">SamaraCore</span>
-          </Link>
-          <Link href="/auth/login">
-            <Button 
-              variant="ghost" 
-              className="text-gray-300 hover:text-white hover:bg-gray-800/50 border border-transparent hover:border-gray-700/50 transition-all duration-300"
-            >
-              Iniciar Sesión
-            </Button>
-          </Link>
-        </div>
-      </header>
 
-      <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 relative z-10 w-full max-w-6xl mx-auto px-6">
+      <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 relative z-10 w-full max-w-6xl mx-auto px-6 pt-16">
         {/* Left Column - Benefits */}
         <div className="flex-1 max-w-lg order-2 lg:order-1">
           <div className="text-center lg:text-left mb-8">
