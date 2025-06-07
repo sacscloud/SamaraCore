@@ -19,7 +19,7 @@ export async function GET(
     
     const agent = await db.collection('agents').findOne({ 
       agentId: params.id,
-      userId: authResult.userId
+      user_id: authResult.userId
     });
 
     if (!agent) {
