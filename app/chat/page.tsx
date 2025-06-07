@@ -824,6 +824,9 @@ function ChatPageContent() {
 
       {/* Confirmation Modal */}
       <ConfirmationModal />
+      
+      {/* Login Required Modal */}
+      <LoginRequiredModal />
     </div>
   );
 }
