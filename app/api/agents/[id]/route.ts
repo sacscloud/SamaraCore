@@ -116,10 +116,38 @@ export async function PATCH(
   try {
     const body = await request.json();
     
+    // Lista de campos permitidos para actualización parcial
+    const allowedFields = [
+      'agentName',
+      'description',
+      'categoria',
+      'configuracion',
+      'prompt',
+      'status',
+      'subAgents',
+      'orchestration'
+    ];
+    
+    // Filtrar solo los campos permitidos del body
+    const allowedUpdates: any = {};
+    for (const field of allowedFields) {
+      if (body.hasOwnProperty(field)) {
+        allowedUpdates[field] = body[field];
+      }
+    }
+    
+    // Verificar que hay campos para actualizar
+    if (Object.keys(allowedUpdates).length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No se enviaron campos válidos para actualizar' },
+        { status: 400 }
+      );
+    }
+    
     const client = await clientPromise;
     const db = client.db('samaracore');
     
-    // Actualización parcial - solo los campos enviados
+    // Actualización parcial - solo los campos permitidos
     const result = await db.collection('agents').updateOne(
       { 
         agentId: params.id,
@@ -127,7 +155,7 @@ export async function PATCH(
       },
       { 
         $set: {
-          ...body,
+          ...allowedUpdates,
           updatedBy: authResult.userId,
           updatedAt: new Date()
         }

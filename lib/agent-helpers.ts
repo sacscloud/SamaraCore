@@ -1,10 +1,6 @@
 import { API_CONFIG } from './config';
 
-// IDs de los agentes del sistema
-const SYSTEM_AGENTS = {
-  PROMPT_GENERATOR: 'agent_6gx1lW6qOot3',
-  WHEN_TO_USE_GENERATOR: 'agent_GLif46VGMXEG'
-};
+const { SYSTEM_AGENTS } = API_CONFIG;
 
 // Función para llamar a cualquier agente
 async function callAgent(agentId: string, message: string) {

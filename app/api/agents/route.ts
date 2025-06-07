@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { 
       agentName, 
-      description, 
+      description,
+      categoria,
+      configuracion,
       prompt = {},
       subAgents = [],
       orchestration = {}
@@ -90,6 +92,11 @@ export async function POST(request: NextRequest) {
       agentId,
       agentName: agentName.trim(),
       description: description?.trim() || '',
+      categoria: categoria || 'utilidad',
+      configuracion: {
+        modelo: configuracion?.modelo || 'gpt-4o-mini',
+        temperatura: configuracion?.temperatura || 0.7
+      },
       user_id: authResult.userId,
       status: 'active',
       prompt: {
