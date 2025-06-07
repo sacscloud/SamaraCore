@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { auth } from '@/lib/firebase';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 export interface Message {
   id: string;
@@ -23,12 +24,12 @@ export interface Conversation {
 }
 
 export const useConversations = (agentId: string) => {
+  const [user, userLoading] = useAuthState(auth);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getAuthHeaders = useCallback(async () => {
-    const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     
     const token = await user.getIdToken();
@@ -36,10 +37,12 @@ export const useConversations = (agentId: string) => {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
-  }, []);
+  }, [user]);
 
   // Cargar conversaciones del agente
   const loadConversations = useCallback(async (folder?: string, search?: string) => {
+    if (!user || userLoading) return;
+    
     setLoading(true);
     setError(null);
     
@@ -62,7 +65,7 @@ export const useConversations = (agentId: string) => {
     } finally {
       setLoading(false);
     }
-  }, [agentId, getAuthHeaders]);
+  }, [agentId, user, userLoading, getAuthHeaders]);
 
   // Crear nueva conversación
   const createConversation = useCallback(async (title?: string, folder?: string) => {
@@ -253,7 +256,7 @@ export const useConversations = (agentId: string) => {
 
   return {
     conversations,
-    loading,
+    loading: loading || userLoading,
     error,
     loadConversations,
     createConversation,
