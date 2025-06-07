@@ -2,11 +2,10 @@ import { z } from 'zod';
 
 export const PromptSchema = z.object({
   base: z.string().default(''),
+  objectives: z.array(z.string()).default([]),
+  rules: z.array(z.string()).default([]),
   examples: z.string().default(''),
-  rules: z.string().default(''),
-  decision_logic: z.string().default(''),
-  response_format: z.string().default(''),
-  other_instructions: z.string().default('')
+  responseFormat: z.string().default('')
 });
 
 export const AgentSchema = z.object({
