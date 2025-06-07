@@ -42,6 +42,8 @@ export default function ChatPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [regeneratingMessage, setRegeneratingMessage] = useState<string | null>(null);
   const [shareModal, setShareModal] = useState<{show: boolean, shareId: string | null}>({show: false, shareId: null});
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -65,6 +67,11 @@ export default function ChatPage() {
       router.push('/auth/login');
     }
   }, [user, loading, router]);
+
+  // Reset imagen error cuando cambie el usuario
+  useEffect(() => {
+    setImageError(false);
+  }, [user?.photoURL]);
 
   // Cargar agente
   useEffect(() => {
@@ -107,6 +114,20 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [currentConversation?.messages, scrollToBottom]);
+
+  // Cerrar menú de usuario al hacer clic fuera
+  useEffect(() => {
+    if (showUserMenu) {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.user-menu-container')) {
+          setShowUserMenu(false);
+        }
+      };
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showUserMenu]);
 
   // Ajustar altura del textarea
   useEffect(() => {
@@ -528,41 +549,105 @@ export default function ChatPage() {
               </div>
             </div>
             
-            {currentConversation && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleExportConversation}
-                  className="p-2 hover:bg-gray-700 rounded-lg text-gray-300 hover:text-white"
-                  title="Exportar conversación"
-                >
-                  <ArrowDownTrayIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={async () => {
-                    if (currentConversation.shared) {
-                      // Si ya está compartido, dejar de compartir
-                      const result = await toggleShare(currentConversation.conversationId, false);
-                      if (result) {
-                        setCurrentConversation(result);
-                      }
-                    } else {
-                      // Compartir y mostrar modal
-                      const result = await toggleShare(currentConversation.conversationId, true);
-                      if (result) {
-                        setCurrentConversation(result);
-                        if (result.shareId) {
-                          setShareModal({show: true, shareId: result.shareId});
+            <div className="flex items-center gap-2">
+              {currentConversation && (
+                <>
+                  <button
+                    onClick={handleExportConversation}
+                    className="p-2 hover:bg-gray-700 rounded-lg text-gray-300 hover:text-white"
+                    title="Exportar conversación"
+                  >
+                    <ArrowDownTrayIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (currentConversation.shared) {
+                        // Si ya está compartido, dejar de compartir
+                        const result = await toggleShare(currentConversation.conversationId, false);
+                        if (result) {
+                          setCurrentConversation(result);
+                        }
+                      } else {
+                        // Compartir y mostrar modal
+                        const result = await toggleShare(currentConversation.conversationId, true);
+                        if (result) {
+                          setCurrentConversation(result);
+                          if (result.shareId) {
+                            setShareModal({show: true, shareId: result.shareId});
+                          }
                         }
                       }
-                    }
-                  }}
-                  className={`p-2 rounded-lg ${currentConversation.shared ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300 hover:text-white'}`}
-                  title={currentConversation.shared ? 'Dejar de compartir' : 'Compartir conversación'}
+                    }}
+                    className={`p-2 rounded-lg ${currentConversation.shared ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300 hover:text-white'}`}
+                    title={currentConversation.shared ? 'Dejar de compartir' : 'Compartir conversación'}
+                  >
+                    <ShareIcon className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+              
+              {/* Avatar del usuario */}
+              <div className="relative user-menu-container">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-600 hover:border-gray-400 transition-colors bg-gradient-to-br from-blue-500 to-purple-600"
                 >
-                  <ShareIcon className="w-5 h-5" />
+                  {user?.photoURL && !imageError ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
+                      onLoad={() => setImageError(false)}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                      {getUserDisplayName().charAt(0).toUpperCase()}
+                    </div>
+                  )}
                 </button>
+                
+                {/* Dropdown del usuario */}
+                {showUserMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-50 py-2">
+                    {/* Información del usuario */}
+                    <div className="px-4 py-3 border-b border-gray-600">
+                      <div className="font-medium text-white">{getUserDisplayName()}</div>
+                      <div className="text-sm text-gray-400">{user?.email}</div>
+                    </div>
+                    
+                    {/* Opciones del menú */}
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          router.push('/dashboard');
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2V7zm16 0H5V5h14v2z" />
+                        </svg>
+                        Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          router.push(`/dashboard/agents/${agentId}`);
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Configurar el agente
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
