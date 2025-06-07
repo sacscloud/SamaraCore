@@ -137,7 +137,7 @@ Query: "Hola, ¿cómo estás?"
 - ⏳ **Credential decryption** y manejo seguro
 - ⏳ **Tool error handling** robusto
 
-### ✔️ Criterios de Validación Fase 3:
+### Criterios de Validación Fase 3:
 1. **Configurar MongoDB tool** desde SamaraCore UI
 2. **Agente consulta base de datos** automáticamente
 3. **Agente hace HTTP requests** a APIs externas  
