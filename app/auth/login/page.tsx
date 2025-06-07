@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthContext } from '@/components/AuthProvider';
+import ThemeToggle from '@/components/ui/theme-toggle';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -49,7 +50,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-[#0E0E10] flex items-center justify-center relative overflow-hidden">
+      {/* Theme Toggle */}
+      <div className="absolute top-6 right-6 z-20">
+        <ThemeToggle />
+      </div>
+      
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/5 via-transparent to-[#00FFC3]/5"></div>
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#3B82F6]/10 rounded-full blur-3xl"></div>
@@ -57,7 +63,7 @@ export default function LoginPage() {
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-md mx-auto px-6 pt-16">
-        <Card className="bg-gray-900/40 border-gray-700/50 backdrop-blur-sm shadow-2xl hover:shadow-[#3B82F6]/10 transition-all duration-300">
+        <Card className="bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50 backdrop-blur-sm shadow-2xl hover:shadow-[#3B82F6]/10 transition-all duration-300">
           <CardHeader className="text-center pb-2">
             <div className="w-16 h-16 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-[#3B82F6]/30">
               <svg className="w-8 h-8 text-[#0E0E10]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,17 +71,17 @@ export default function LoginPage() {
                       d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <CardTitle className="text-2xl font-bold text-white mb-2">
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
               Bienvenido de vuelta
             </CardTitle>
-            <CardDescription className="text-gray-400 text-base">
+            <CardDescription className="text-gray-600 dark:text-gray-400 text-base">
               Accede a tu cuenta de SamaraCore y continúa creando agentes IA
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-4">
             <form onSubmit={handleEmailLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white font-medium">Email</Label>
+                <Label htmlFor="email" className="text-gray-900 dark:text-white font-medium">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -84,11 +90,11 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading || isGoogleLoading}
-                  className="bg-gray-800/50 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
+                  className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-white font-medium">Contraseña</Label>
+                <Label htmlFor="password" className="text-gray-900 dark:text-white font-medium">Contraseña</Label>
                 <Input
                   id="password"
                   type="password"
@@ -97,7 +103,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading || isGoogleLoading}
-                  className="bg-gray-800/50 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
+                  className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
                 />
               </div>
               {error && (
@@ -121,22 +127,22 @@ export default function LoginPage() {
               </Button>
             </form>
             
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-700/50" />
+                          <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-300 dark:border-gray-700/50" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-gray-50 dark:bg-gray-900/40 px-3 text-gray-600 dark:text-gray-400 font-medium tracking-wider">
+                    O continúa con
+                  </span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-gray-900/40 px-3 text-gray-400 font-medium tracking-wider">
-                  O continúa con
-                </span>
-              </div>
-            </div>
             
             <Button
               variant="outline"
               onClick={handleGoogleLogin}
               disabled={isLoading || isGoogleLoading}
-              className="w-full h-12 border-gray-600/50 text-gray-300 hover:text-white hover:bg-gray-800/50 hover:border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300"
+              className="w-full h-12 border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300"
             >
               {isGoogleLoading ? (
                 <div className="flex items-center gap-2">
@@ -157,7 +163,7 @@ export default function LoginPage() {
             </Button>
             
             <div className="text-center text-sm">
-              <span className="text-gray-400">¿No tienes cuenta? </span>
+              <span className="text-gray-600 dark:text-gray-400">¿No tienes cuenta? </span>
               <Link href="/auth/register" className="text-[#00FFC3] hover:text-[#00FFC3]/80 font-medium hover:underline transition-colors">
                 Regístrate aquí
               </Link>

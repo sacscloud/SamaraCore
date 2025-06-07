@@ -221,6 +221,67 @@ webhook: Recibir eventos HTTP externos
 
 ---
 
+## 🌐 FASE 7: Widget Embebido
+**Duración**: 1 semana  
+**Objetivo**: Chat embebido para integrar en sitios web externos
+
+### 📱 SamaraCore Entregables:
+- ⏳ **Embed Builder UI** - Generador de código para embedding
+- ⏳ **Widget Configuration** - Personalización visual y funcional
+- ⏳ **Embed Page** - Página optimizada para iframe (`/embed`)
+- ⏳ **Widget Analytics** - Métricas de uso del widget
+- ⏳ **Embed Management** - Dashboard para gestionar embeds activos
+
+### 🤖 Core Agent Entregables:
+- ⏳ **Widget API** - Endpoints específicos para widgets
+- ⏳ **CORS Configuration** - Configuración segura para embeds
+- ⏳ **Widget Authentication** - Sistema de autenticación para embeds
+- ⏳ **Rate Limiting** - Control de uso para widgets públicos
+
+### 📦 Widget.js Entregables:
+- ⏳ **Widget Loader Script** - JavaScript vanilla ligero (~300 líneas)
+- ⏳ **Iframe Integration** - Creación y manejo de iframe
+- ⏳ **Cross-domain Communication** - postMessage API
+- ⏳ **Widget Positioning** - Sistema de posicionamiento flexible
+- ⏳ **Theme Customization** - Personalización de colores y estilos
+
+### ✔️ Criterios de Validación Fase 7:
+1. **Generar código de embedding** desde SamaraCore UI
+2. **Widget funcionando** en sitio web externo
+3. **Personalización visual** (colores, posición, tamaño)
+4. **Comunicación bidireccional** entre widget y chat
+5. **Analytics de uso** del widget
+6. **Múltiples widgets** en sitios diferentes
+
+### 🎯 Casos de Uso:
+```
+E-commerce: Widget de soporte al cliente
+SaaS: Ayuda contextual en aplicaciones
+Corporate: Asistente virtual en sitio web
+Documentación: Chat de ayuda técnica
+```
+
+### 🛠️ Implementación Técnica:
+```javascript
+// Código generado para sitios externos
+<script>
+(function(w,d,s,o,f,js,fjs){
+  w['SamaraChatObject']=o;w[o]=w[o]||function(){
+  (w[o].q=w[o].q||[]).push(arguments)};w[o].l=1*new Date();
+  js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
+  js.async=1;js.src=f;fjs.parentNode.insertBefore(js,fjs);
+})(window,document,'script','SamaraChat','https://chat.samaracore.com/widget.js');
+
+SamaraChat('init', {
+  agentId: 'abc123',
+  theme: 'light',
+  position: 'bottom-right'
+});
+</script>
+```
+
+---
+
 ## 📊 Timeline y Milestones
 
 | Fase | Duración | Milestone | Validación |
@@ -231,8 +292,9 @@ webhook: Recibir eventos HTTP externos
 | **4** | 3-4 días | UX pulida | Experiencia fluida end-to-end |
 | **5** | 1 semana | Deployment channels | Slack + Discord + REST |
 | **6** | 1-2 semanas | Ecosystem completo | MCP + LangChain + Custom tools |
+| **7** | 1 semana | Widget embebido | Chat funcionando en sitios externos |
 
-**Total**: 5-6 semanas para MVP completo
+**Total**: 6-7 semanas para MVP completo + Widget
 
 ---
 
@@ -273,6 +335,13 @@ webhook: Recibir eventos HTTP externos
 - [ ] Tool builder para herramientas custom
 - [ ] Ecosystem escalable
 - [ ] Documentation completa
+
+### ✅ Fase 7 Completa:
+- [ ] Widget.js generado y funcionando
+- [ ] Embed builder UI operativo
+- [ ] Widget deployado en sitio externo
+- [ ] Analytics de widget funcionando
+- [ ] Personalización visual completa
 
 ---
 

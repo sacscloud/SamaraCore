@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthContext } from '@/components/AuthProvider';
+import ThemeToggle from '@/components/ui/theme-toggle';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -56,7 +57,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-[#0E0E10] flex items-center justify-center relative overflow-hidden">
+      {/* Theme Toggle */}
+      <div className="absolute top-6 right-6 z-20">
+        <ThemeToggle />
+      </div>
+      
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#3B82F6]/5 via-transparent to-[#00FFC3]/5"></div>
       <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-[#3B82F6]/10 rounded-full blur-3xl"></div>
@@ -66,10 +72,10 @@ export default function RegisterPage() {
         {/* Left Column - Benefits */}
         <div className="flex-1 max-w-lg order-2 lg:order-1">
           <div className="text-center lg:text-left mb-8">
-            <h2 className="text-3xl font-bold mb-4 text-white">
+            <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
               Únete a la revolución de la <span className="text-[#00FFC3]">IA personalizada</span>
             </h2>
-            <p className="text-gray-300 text-lg leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
               Miles de empresas ya confían en SamaraCore para automatizar procesos y optimizar resultados.
             </p>
           </div>
@@ -92,11 +98,11 @@ export default function RegisterPage() {
                 description: "Crea tantos agentes como necesites, sin restricciones"
               }
             ].map((benefit, index) => (
-              <div key={index} className="flex items-start gap-4 p-4 bg-gray-900/30 rounded-xl border border-gray-700/30 backdrop-blur-sm">
+              <div key={index} className="flex items-start gap-4 p-4 bg-gray-100 dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-700/30 backdrop-blur-sm">
                 <div className="text-2xl">{benefit.icon}</div>
                 <div>
-                  <h3 className="font-semibold text-white mb-1">{benefit.title}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">{benefit.description}</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{benefit.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{benefit.description}</p>
                 </div>
               </div>
             ))}
@@ -105,7 +111,7 @@ export default function RegisterPage() {
 
         {/* Right Column - Form */}
         <div className="flex-1 w-full max-w-md order-1 lg:order-2">
-          <Card className="bg-gray-900/40 border-gray-700/50 backdrop-blur-sm shadow-2xl hover:shadow-[#3B82F6]/10 transition-all duration-300">
+          <Card className="bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50 backdrop-blur-sm shadow-2xl hover:shadow-[#3B82F6]/10 transition-all duration-300">
             <CardHeader className="text-center pb-2">
               <div className="w-16 h-16 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-[#3B82F6]/30">
                 <svg className="w-8 h-8 text-[#0E0E10]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,17 +119,17 @@ export default function RegisterPage() {
                         d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
               </div>
-              <CardTitle className="text-2xl font-bold text-white mb-2">
+              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 Únete a SamaraCore
               </CardTitle>
-              <CardDescription className="text-gray-400 text-base">
+              <CardDescription className="text-gray-600 dark:text-gray-400 text-base">
                 Crea tu cuenta y comienza a construir agentes IA personalizados
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
               <form onSubmit={handleEmailRegister} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white font-medium">Email</Label>
+                  <Label htmlFor="email" className="text-gray-900 dark:text-white font-medium">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -132,11 +138,11 @@ export default function RegisterPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={isLoading || isGoogleLoading}
-                    className="bg-gray-800/50 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
+                    className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-white font-medium">Contraseña</Label>
+                  <Label htmlFor="password" className="text-gray-900 dark:text-white font-medium">Contraseña</Label>
                   <Input
                     id="password"
                     type="password"
@@ -145,11 +151,11 @@ export default function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={isLoading || isGoogleLoading}
-                    className="bg-gray-800/50 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
+                    className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-white font-medium">Confirmar Contraseña</Label>
+                  <Label htmlFor="confirmPassword" className="text-gray-900 dark:text-white font-medium">Confirmar Contraseña</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -158,7 +164,7 @@ export default function RegisterPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     disabled={isLoading || isGoogleLoading}
-                    className="bg-gray-800/50 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
+                    className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-[#3B82F6]/50 focus:ring-[#3B82F6]/20 transition-colors h-12"
                   />
                 </div>
                 {error && (
@@ -184,10 +190,10 @@ export default function RegisterPage() {
               
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-700/50" />
+                  <span className="w-full border-t border-gray-300 dark:border-gray-700/50" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-gray-900/40 px-3 text-gray-400 font-medium tracking-wider">
+                  <span className="bg-gray-50 dark:bg-gray-900/40 px-3 text-gray-600 dark:text-gray-400 font-medium tracking-wider">
                     O continúa con
                   </span>
                 </div>
@@ -197,7 +203,7 @@ export default function RegisterPage() {
                 variant="outline"
                 onClick={handleGoogleLogin}
                 disabled={isLoading || isGoogleLoading}
-                className="w-full h-12 border-gray-600/50 text-gray-300 hover:text-white hover:bg-gray-800/50 hover:border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300"
+                className="w-full h-12 border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:border-[#3B82F6]/50 hover:shadow-lg hover:shadow-[#3B82F6]/20 transition-all duration-300"
               >
                 {isGoogleLoading ? (
                   <div className="flex items-center gap-2">

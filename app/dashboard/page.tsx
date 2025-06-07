@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgent } from '@/hooks/useAgent';
+import ThemeToggle from '@/components/ui/theme-toggle';
 import { Trash2 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -78,16 +79,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0E0E10] text-white font-['Inter']">
+    <div className="min-h-screen bg-white dark:bg-[#0E0E10] text-gray-900 dark:text-white font-['Inter']">
       {/* Header */}
-      <header className="border-b border-gray-800/50 backdrop-blur-sm sticky top-0 z-50 bg-[#0E0E10]/80">
+              <header className="border-b border-gray-200 dark:border-gray-800/50 backdrop-blur-sm sticky top-0 z-50 bg-white/80 dark:bg-[#0E0E10]/80">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="w-8 h-8 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
                 <span className="text-sm font-bold text-[#0E0E10]">S</span>
               </div>
-              <span className="text-xl font-bold text-white">SamaraCore</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">SamaraCore</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link href="/dashboard" className="text-sm font-medium text-[#00FFC3] px-3 py-2 rounded-lg bg-[#00FFC3]/10 border border-[#00FFC3]/20">
@@ -99,12 +100,13 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <div className="hidden sm:block text-right">
               <p className="text-sm text-gray-400">Bienvenido</p>
-              <p className="text-sm font-medium text-white">{user.email}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{user.email}</p>
             </div>
+            <ThemeToggle />
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="border-gray-600/50 text-gray-300 hover:text-white hover:bg-gray-800/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
+              className="border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:border-red-500/50 hover:text-red-400 transition-all duration-300"
             >
               Cerrar Sesión
             </Button>
@@ -127,7 +129,7 @@ export default function DashboardPage() {
               </svg>
             </div>
             <div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                 Bienvenido de vuelta
               </h1>
               <p className="text-gray-400 text-lg">
@@ -140,7 +142,7 @@ export default function DashboardPage() {
         {/* Agents Section */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-white">Tus Agentes</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Tus Agentes</h2>
             <Link href="/dashboard/agents/new">
               <Button className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-lg hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300 hover:scale-105">
                 + Crear Agente
@@ -151,27 +153,27 @@ export default function DashboardPage() {
           {agentsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(3)].map((_, i) => (
-                <Card key={i} className="bg-gray-900/40 border-gray-700/50">
+                <Card key={i} className="bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                   <CardContent className="p-6">
                     <div className="animate-pulse">
-                      <div className="w-12 h-12 bg-gray-700 rounded-xl mb-4"></div>
-                      <div className="h-4 bg-gray-700 rounded mb-2 w-3/4"></div>
-                      <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                      <div className="w-12 h-12 bg-gray-300 dark:bg-gray-700 rounded-xl mb-4"></div>
+                      <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded mb-2 w-3/4"></div>
+                      <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : agents.length === 0 ? (
-            <Card className="bg-gray-900/40 border-gray-700/50">
+            <Card className="bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
               <CardContent className="p-12 text-center">
-                <div className="w-20 h-20 bg-gray-800/50 rounded-2xl mx-auto mb-6 flex items-center justify-center">
+                                  <div className="w-20 h-20 bg-gray-200 dark:bg-gray-800/50 rounded-2xl mx-auto mb-6 flex items-center justify-center">
                   <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                           d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
                   ¡Es hora de crear tu primer agente!
                 </h3>
                 <p className="text-gray-400 mb-6 max-w-md mx-auto">
@@ -188,7 +190,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {agents.map((agent) => (
                 <Link key={agent.agentId} href={`/dashboard/agents/${agent.agentId}`} className="group">
-                  <Card className="bg-gray-900/40 border-gray-700/50 hover:border-[#3B82F6]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#3B82F6]/10 hover:-translate-y-1 cursor-pointer relative">
+                  <Card className="bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50 hover:border-[#3B82F6]/50 transition-all duration-300 hover:shadow-lg hover:shadow-[#3B82F6]/10 hover:-translate-y-1 cursor-pointer relative">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <div className="w-12 h-12 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">

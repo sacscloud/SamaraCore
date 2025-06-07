@@ -13,15 +13,22 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Cargar tema guardado o detectar preferencia del sistema
     const savedTheme = localStorage.getItem('theme') as Theme;
     const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     
     const initialTheme = savedTheme || systemPreference;
+    const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    
+    // Solo actualizar si es diferente al que ya está aplicado
+    if (initialTheme !== currentTheme) {
+      updateDocumentTheme(initialTheme);
+    }
     setTheme(initialTheme);
-    updateDocumentTheme(initialTheme);
   }, []);
 
   const updateDocumentTheme = (newTheme: Theme) => {

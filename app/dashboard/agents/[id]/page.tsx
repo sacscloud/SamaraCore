@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 import { useAuth } from '@/hooks/useAuth';
+import ThemeToggle from '@/components/ui/theme-toggle';
 import { 
   ArrowLeft, 
   Bot, 
@@ -231,23 +232,26 @@ export default function AgentDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0E0E10] text-white font-['Inter']">
+    <div className="min-h-screen bg-white dark:bg-[#0E0E10] text-gray-900 dark:text-white font-['Inter']">
       {/* Header */}
-      <header className="border-b border-gray-800/50 backdrop-blur-sm sticky top-0 z-50 bg-[#0E0E10]/80">
+              <header className="border-b border-gray-200 dark:border-gray-800/50 backdrop-blur-sm sticky top-0 z-50 bg-white/80 dark:bg-[#0E0E10]/80">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="flex items-center gap-3 group">
               <div className="w-8 h-8 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
                 <span className="text-sm font-bold text-[#0E0E10]">S</span>
               </div>
-              <span className="text-xl font-bold text-white">SamaraCore</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">SamaraCore</span>
             </Link>
           </div>
           
-          <Link href="/dashboard" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            <span>Volver al Dashboard</span>
-          </Link>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Link href="/dashboard" className="flex items-center gap-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              <span>Volver al Dashboard</span>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -312,7 +316,7 @@ export default function AgentDetailPage() {
                       <Textarea
                         value={editData.base}
                         onChange={(e) => setEditData({...editData, base: e.target.value})}
-                        className="bg-gray-800/50 border-gray-600/50 text-white min-h-[120px]"
+                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
                         placeholder="Describe el rol y personalidad base del agente..."
                       />
                       <div className="flex gap-2">
@@ -368,7 +372,7 @@ export default function AgentDetailPage() {
                       <Textarea
                         value={editData.objectives}
                         onChange={(e) => setEditData({...editData, objectives: e.target.value})}
-                        className="bg-gray-800/50 border-gray-600/50 text-white min-h-[120px]"
+                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
                         placeholder="Escribe cada objetivo en una línea separada..."
                       />
                       <div className="flex gap-2">
@@ -433,7 +437,7 @@ export default function AgentDetailPage() {
                       <Textarea
                         value={editData.rules}
                         onChange={(e) => setEditData({...editData, rules: e.target.value})}
-                        className="bg-gray-800/50 border-gray-600/50 text-white min-h-[120px]"
+                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
                         placeholder="Escribe cada regla en una línea separada..."
                       />
                       <div className="flex gap-2">
@@ -498,7 +502,7 @@ export default function AgentDetailPage() {
                       <Textarea
                         value={editData.examples}
                         onChange={(e) => setEditData({...editData, examples: e.target.value})}
-                        className="bg-gray-800/50 border-gray-600/50 text-white min-h-[120px]"
+                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
                         placeholder="Ejemplos de conversaciones o casos de uso..."
                       />
                       <div className="flex gap-2">
@@ -554,7 +558,7 @@ export default function AgentDetailPage() {
                       <Textarea
                         value={editData.responseFormat}
                         onChange={(e) => setEditData({...editData, responseFormat: e.target.value})}
-                        className="bg-gray-800/50 border-gray-600/50 text-white min-h-[120px]"
+                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
                         placeholder="Especifica cómo debe formatear las respuestas (JSON, markdown, etc.)..."
                       />
                       <div className="flex gap-2">
@@ -615,7 +619,7 @@ export default function AgentDetailPage() {
                       value={testMessage}
                       onChange={(e) => setTestMessage(e.target.value)}
                       placeholder="Escribe tu mensaje aquí..."
-                      className="bg-gray-800/50 border-gray-600/50 text-white"
+                      className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       onKeyPress={(e) => e.key === 'Enter' && !testing && handleTestAgent()}
                     />
                     <Button 
