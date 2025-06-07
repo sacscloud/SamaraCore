@@ -77,7 +77,8 @@ export default function ChatPage() {
   }, [agentId, user]);
 
   const handleNewConversation = useCallback(async () => {
-    const conversation = await createConversation(`Nueva conversación con ${agent?.name}`);
+    const agentName = agent?.name || 'Asistente';
+    const conversation = await createConversation(`Nueva conversación con ${agentName}`);
     if (conversation) {
       setCurrentConversation(conversation);
       setSearchTerm('');
@@ -382,11 +383,28 @@ export default function ChatPage() {
           {/* Nueva conversación */}
           <button
             onClick={handleNewConversation}
-            className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-700 rounded-lg mb-4 text-gray-300 hover:text-white"
+            className="w-full flex items-center gap-2 p-2 text-left hover:bg-gray-700 rounded-lg mb-2 text-gray-300 hover:text-white"
           >
             <PlusIcon className="w-5 h-5" />
             Nueva conversación
           </button>
+          
+          {/* Borrar todas las conversaciones */}
+          {conversations.length > 0 && (
+            <button
+              onClick={async () => {
+                if (confirm('¿Estás seguro de eliminar TODAS las conversaciones? Esta acción no se puede deshacer.')) {
+                  const promises = conversations.map(conv => deleteConversation(conv.conversationId));
+                  await Promise.all(promises);
+                  setCurrentConversation(null);
+                }
+              }}
+              className="w-full flex items-center gap-2 p-2 text-left hover:bg-red-600/20 rounded-lg mb-4 text-red-400 hover:text-red-300"
+            >
+              <TrashIcon className="w-5 h-5" />
+              Borrar todas
+            </button>
+          )}
           
           {/* Búsqueda */}
           <div className="relative mb-4">
@@ -534,7 +552,7 @@ export default function ChatPage() {
                         setCurrentConversation(result);
                       }
                     } else {
-                      // Si no está compartido, compartir y mostrar modal
+                      // Compartir y mostrar modal
                       const result = await toggleShare(currentConversation.conversationId, true);
                       if (result) {
                         setCurrentConversation(result);
@@ -734,6 +752,8 @@ function ConversationItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(conversation.title);
   const [menuPosition, setMenuPosition] = useState({x: 0, y: 0});
+  const [showFolderMenu, setShowFolderMenu] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -772,8 +792,15 @@ function ConversationItem({
         ) : (
           <div className="text-sm font-medium truncate text-white">{conversation.title}</div>
         )}
-        <div className="text-xs text-gray-400 mt-1">
-          {conversation.messages.length} mensajes
+        <div className="text-xs text-gray-400 mt-1 space-y-1">
+          <div>{conversation.messages.length} mensajes</div>
+          <div>{new Date(conversation.updatedAt).toLocaleDateString('es-ES', {
+            day: '2-digit', 
+            month: '2-digit', 
+            year: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}</div>
         </div>
         {conversation.folder && (
           <div className="text-xs text-blue-400 mt-1">📁 {conversation.folder}</div>
@@ -813,6 +840,61 @@ function ConversationItem({
             <PencilIcon className="w-4 h-4" />
             Renombrar
           </button>
+          <button
+            onClick={() => {
+              setShowFolderMenu(!showFolderMenu);
+            }}
+            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-600 flex items-center gap-2 text-gray-300 hover:text-white"
+          >
+            <FolderPlusIcon className="w-4 h-4" />
+            Mover a carpeta
+          </button>
+          {showFolderMenu && (
+            <div className="px-3 py-2 bg-gray-800 border-t border-gray-600">
+              <div className="space-y-1">
+                <button
+                  onClick={async () => {
+                    await onMove(conversation.conversationId, '');
+                    setShowMenu(false);
+                    setShowFolderMenu(false);
+                  }}
+                  className="w-full text-left text-xs py-1 px-2 hover:bg-gray-700 rounded text-gray-400"
+                >
+                  Sin carpeta
+                </button>
+                {folders.map(folder => (
+                  <button
+                    key={folder}
+                    onClick={async () => {
+                      await onMove(conversation.conversationId, folder);
+                      setShowMenu(false);
+                      setShowFolderMenu(false);
+                    }}
+                    className="w-full text-left text-xs py-1 px-2 hover:bg-gray-700 rounded text-gray-400"
+                  >
+                    📁 {folder}
+                  </button>
+                ))}
+                <div className="mt-2 pt-2 border-t border-gray-600">
+                  <input
+                    type="text"
+                    placeholder="Nueva carpeta..."
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter' && newFolderName.trim()) {
+                        await onMove(conversation.conversationId, newFolderName.trim());
+                        setNewFolderName('');
+                        setShowMenu(false);
+                        setShowFolderMenu(false);
+                      }
+                    }}
+                    className="w-full text-xs px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
           <button
             onClick={async () => {
               await onShare(conversation.conversationId, !conversation.shared);
