@@ -19,8 +19,7 @@ import {
   ClipboardIcon,
   ArrowPathIcon,
   CheckIcon,
-  ArrowDownTrayIcon,
-  FolderPlusIcon
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { ArrowPathIcon as ArrowPathSolidIcon } from '@heroicons/react/24/solid';
 
@@ -41,7 +40,6 @@ export default function ChatPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [regeneratingMessage, setRegeneratingMessage] = useState<string | null>(null);
   const [shareModal, setShareModal] = useState<{show: boolean, shareId: string | null}>({show: false, shareId: null});
   
@@ -56,7 +54,6 @@ export default function ChatPage() {
     createConversation,
     addMessage,
     updateTitle,
-    moveToFolder,
     toggleShare,
     deleteConversation,
     error: conversationsError
@@ -77,13 +74,12 @@ export default function ChatPage() {
   }, [agentId, user]);
 
   const handleNewConversation = useCallback(async () => {
-    const agentName = agent?.name || 'Asistente';
-    const conversation = await createConversation(`Nueva conversación con ${agentName}`);
+    const conversation = await createConversation('Nueva conversación');
     if (conversation) {
       setCurrentConversation(conversation);
       setSearchTerm('');
     }
-  }, [createConversation, agent?.name]);
+  }, [createConversation]);
 
   // Seleccionar conversación inicial
   useEffect(() => {
@@ -137,6 +133,7 @@ export default function ChatPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Datos del agente:', data);
+        console.log('🏷️ Nombre del agente:', data.agent?.agentName);
         setAgent(data.agent);
       } else {
         const errorData = await response.text();
@@ -194,6 +191,12 @@ export default function ChatPage() {
 
           if (assistantMessage) {
             setCurrentConversation(assistantMessage);
+            
+            // Si es el primer mensaje del usuario, generar título automático
+            if (assistantMessage.messages.length === 2 && currentConversation.title === 'Nueva conversación') {
+              const newTitle = generateConversationTitle(messageContent.trim());
+              await updateTitle(currentConversation.conversationId, newTitle);
+            }
           }
         } else {
           throw new Error('Error enviando mensaje');
@@ -237,7 +240,7 @@ export default function ChatPage() {
     
     const exportData = {
       title: currentConversation.title,
-      agent: agent?.name,
+      agent: agent?.agentName,
       messages: currentConversation.messages,
       createdAt: currentConversation.createdAt
     };
@@ -256,12 +259,28 @@ export default function ChatPage() {
       conv.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       conv.messages.some(msg => msg.content.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesFolder = !selectedFolder || conv.folder === selectedFolder;
-    
-    return matchesSearch && matchesFolder;
+    return matchesSearch;
   });
 
-  const folders = Array.from(new Set(conversations.map(c => c.folder).filter(Boolean))) as string[];
+  // Función para obtener nombre de usuario
+  const getUserDisplayName = () => {
+    return user?.displayName || user?.email || 'Usuario';
+  };
+
+  // Función para generar título automático
+  const generateConversationTitle = (userMessage: string): string => {
+    // Limpiar el mensaje y tomar las primeras palabras
+    const cleanMessage = userMessage.trim();
+    const words = cleanMessage.split(' ');
+    
+    // Si es muy corto, usar todo el mensaje
+    if (words.length <= 6) {
+      return cleanMessage;
+    }
+    
+    // Si es más largo, tomar las primeras 6 palabras y agregar "..."
+    return words.slice(0, 6).join(' ') + '...';
+  };
 
   if (loading) {
     return (
@@ -370,7 +389,7 @@ export default function ChatPage() {
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">
-              {agent?.name || 'Chat'}
+              {agent?.agentName || 'Chat'}
             </h2>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -389,22 +408,7 @@ export default function ChatPage() {
             Nueva conversación
           </button>
           
-          {/* Borrar todas las conversaciones */}
-          {conversations.length > 0 && (
-            <button
-              onClick={async () => {
-                if (confirm('¿Estás seguro de eliminar TODAS las conversaciones? Esta acción no se puede deshacer.')) {
-                  const promises = conversations.map(conv => deleteConversation(conv.conversationId));
-                  await Promise.all(promises);
-                  setCurrentConversation(null);
-                }
-              }}
-              className="w-full flex items-center gap-2 p-2 text-left hover:bg-red-600/20 rounded-lg mb-4 text-red-400 hover:text-red-300"
-            >
-              <TrashIcon className="w-5 h-5" />
-              Borrar todas
-            </button>
-          )}
+
           
           {/* Búsqueda */}
           <div className="relative mb-4">
@@ -416,34 +420,6 @@ export default function ChatPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-700 text-white placeholder-gray-400"
             />
-          </div>
-          
-          {/* Filtros por carpeta */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-300">Carpetas</span>
-            </div>
-            <div className="space-y-1">
-              <button
-                onClick={() => setSelectedFolder(null)}
-                className={`w-full text-left px-2 py-1 rounded text-sm ${
-                  !selectedFolder ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300'
-                }`}
-              >
-                Todas
-              </button>
-              {folders.map(folder => (
-                <button
-                  key={folder}
-                  onClick={() => setSelectedFolder(folder)}
-                  className={`w-full text-left px-2 py-1 rounded text-sm ${
-                    selectedFolder === folder ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300'
-                  }`}
-                >
-                  📁 {folder}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -460,8 +436,8 @@ export default function ChatPage() {
                 {searchTerm ? 'No se encontraron conversaciones' : 'No hay conversaciones'}
               </div>
               <div className="text-xs text-gray-500 space-y-1">
-                <div>👤 Usuario: {user?.uid || 'No ID'}</div>
-                <div>🤖 Agente: {agentId}</div>
+                <div>👤 Usuario: {getUserDisplayName()}</div>
+                <div>🤖 Agente: {agent?.agentName || 'Asistente'}</div>
                 <div>📊 Total conversaciones: {conversations.length}</div>
                 {conversationsError && (
                   <div className="text-red-400 mt-2">❌ Error: {conversationsError}</div>
@@ -469,8 +445,30 @@ export default function ChatPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-1 p-2">
-              {filteredConversations.map(conversation => (
+            <>
+              {/* Botón Borrar todas alineado a la derecha */}
+              {conversations.length > 0 && (
+                <div className="px-2 pt-2 pb-1">
+                  <div className="flex justify-end">
+                    <button
+                      onClick={async () => {
+                        if (confirm('¿Estás seguro de eliminar TODAS las conversaciones? Esta acción no se puede deshacer.')) {
+                          const promises = conversations.map(conv => deleteConversation(conv.conversationId));
+                          await Promise.all(promises);
+                          setCurrentConversation(null);
+                        }
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 text-xs hover:bg-red-600/20 rounded text-red-400 hover:text-red-300"
+                    >
+                      <TrashIcon className="w-3 h-3" />
+                      Borrar todas
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-1 p-2">
+                {filteredConversations.map(conversation => (
                 <ConversationItem
                   key={conversation.conversationId}
                   conversation={conversation}
@@ -478,7 +476,6 @@ export default function ChatPage() {
                   onClick={() => setCurrentConversation(conversation)}
                   onDelete={deleteConversation}
                   onRename={updateTitle}
-                  onMove={moveToFolder}
                   onShare={async (id: string, shared: boolean) => {
                     if (shared) {
                       // Compartir y mostrar modal
@@ -502,10 +499,10 @@ export default function ChatPage() {
                       return !!result;
                     }
                   }}
-                  folders={folders}
                 />
               ))}
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -526,11 +523,8 @@ export default function ChatPage() {
               )}
               <div>
                 <h1 className="text-lg font-semibold text-white">
-                  {currentConversation?.title || 'Selecciona una conversación'}
+                  {currentConversation?.title || `Chat con ${agent?.agentName || 'Asistente'}`}
                 </h1>
-                <p className="text-sm text-gray-400">
-                  {agent?.name}
-                </p>
               </div>
             </div>
             
@@ -650,7 +644,7 @@ export default function ChatPage() {
             <button
               onClick={() => handleSendMessage()}
               disabled={!message.trim() || isSubmitting || !currentConversation}
-              className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <PaperAirplaneIcon className="w-5 h-5" />
             </button>
@@ -735,25 +729,19 @@ function ConversationItem({
   onClick, 
   onDelete, 
   onRename,
-  onMove,
-  onShare,
-  folders
+  onShare
 }: {
   conversation: Conversation;
   isActive: boolean;
   onClick: () => void;
   onDelete: (id: string) => Promise<boolean>;
   onRename: (id: string, title: string) => Promise<boolean>;
-  onMove: (id: string, folder: string) => Promise<boolean>;
   onShare: (id: string, shared: boolean) => Promise<boolean>;
-  folders: string[];
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(conversation.title);
   const [menuPosition, setMenuPosition] = useState({x: 0, y: 0});
-  const [showFolderMenu, setShowFolderMenu] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -802,9 +790,6 @@ function ConversationItem({
             minute: '2-digit'
           })}</div>
         </div>
-        {conversation.folder && (
-          <div className="text-xs text-blue-400 mt-1">📁 {conversation.folder}</div>
-        )}
       </div>
       
       <button
@@ -840,61 +825,6 @@ function ConversationItem({
             <PencilIcon className="w-4 h-4" />
             Renombrar
           </button>
-          <button
-            onClick={() => {
-              setShowFolderMenu(!showFolderMenu);
-            }}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-600 flex items-center gap-2 text-gray-300 hover:text-white"
-          >
-            <FolderPlusIcon className="w-4 h-4" />
-            Mover a carpeta
-          </button>
-          {showFolderMenu && (
-            <div className="px-3 py-2 bg-gray-800 border-t border-gray-600">
-              <div className="space-y-1">
-                <button
-                  onClick={async () => {
-                    await onMove(conversation.conversationId, '');
-                    setShowMenu(false);
-                    setShowFolderMenu(false);
-                  }}
-                  className="w-full text-left text-xs py-1 px-2 hover:bg-gray-700 rounded text-gray-400"
-                >
-                  Sin carpeta
-                </button>
-                {folders.map(folder => (
-                  <button
-                    key={folder}
-                    onClick={async () => {
-                      await onMove(conversation.conversationId, folder);
-                      setShowMenu(false);
-                      setShowFolderMenu(false);
-                    }}
-                    className="w-full text-left text-xs py-1 px-2 hover:bg-gray-700 rounded text-gray-400"
-                  >
-                    📁 {folder}
-                  </button>
-                ))}
-                <div className="mt-2 pt-2 border-t border-gray-600">
-                  <input
-                    type="text"
-                    placeholder="Nueva carpeta..."
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    onKeyDown={async (e) => {
-                      if (e.key === 'Enter' && newFolderName.trim()) {
-                        await onMove(conversation.conversationId, newFolderName.trim());
-                        setNewFolderName('');
-                        setShowMenu(false);
-                        setShowFolderMenu(false);
-                      }
-                    }}
-                    className="w-full text-xs px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
           <button
             onClick={async () => {
               await onShare(conversation.conversationId, !conversation.shared);
