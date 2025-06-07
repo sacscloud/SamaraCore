@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Markdown from '@/components/ui/markdown';
 import { 
@@ -34,13 +34,7 @@ export default function SharedConversationPage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (shareId) {
-      loadSharedConversation();
-    }
-  }, [shareId]);
-
-  const loadSharedConversation = async () => {
+  const loadSharedConversation = useCallback(async () => {
     try {
       const response = await fetch(`/api/conversations/${shareId}`);
       const data = await response.json();
@@ -55,7 +49,13 @@ export default function SharedConversationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [shareId]);
+
+  useEffect(() => {
+    if (shareId) {
+      loadSharedConversation();
+    }
+  }, [shareId, loadSharedConversation]);
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(window.location.href);

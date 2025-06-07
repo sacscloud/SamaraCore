@@ -694,7 +694,7 @@ export default function AgentDetailPage() {
                       <span className="text-green-600 dark:text-green-400">POST</span> {API_CONFIG.CORE_AGENT_URL}/execute/{agentId}
                     </div>
                     <div className="text-xs text-gray-500">
-                      Body: {"{"}"message": "tu mensaje"{"}"} 
+                      Body: {`{"message": "tu mensaje"}`} 
                     </div>
                   </div>
                 </CardContent>

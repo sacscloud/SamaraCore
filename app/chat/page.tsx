@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
@@ -26,7 +26,7 @@ import {
 import { ArrowPathIcon as ArrowPathSolidIcon } from '@heroicons/react/24/solid';
 import { API_CONFIG } from '@/lib/config';
 
-export default function ChatPage() {
+function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, loading] = useAuthState(auth);
@@ -79,12 +79,36 @@ export default function ChatPage() {
     setImageError(false);
   }, [user?.photoURL]);
 
+  const loadAgent = useCallback(async () => {
+    try {
+      setAgentError(null);
+      
+      const token = await user?.getIdToken();
+      
+      const response = await fetch(`/api/agents/${agentId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAgent(data.agent);
+      } else {
+        const errorData = await response.text();
+        console.error('Error del servidor:', errorData);
+        setAgentError(`Error ${response.status}: ${errorData}`);
+      }
+    } catch (error) {
+      console.error('Error cargando agente:', error);
+      setAgentError(error instanceof Error ? error.message : 'Error desconocido');
+    }
+  }, [agentId, user]);
+
   // Cargar agente
   useEffect(() => {
     if (agentId && user) {
       loadAgent();
     }
-  }, [agentId, user]);
+  }, [agentId, user, loadAgent]);
 
   const handleNewConversation = useCallback(async () => {
     const conversation = await createConversation('Nueva conversación');
@@ -142,30 +166,6 @@ export default function ChatPage() {
       textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
     }
   }, [message]);
-
-  const loadAgent = async () => {
-    try {
-      setAgentError(null);
-      
-      const token = await user?.getIdToken();
-      
-      const response = await fetch(`/api/agents/${agentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAgent(data.agent);
-      } else {
-        const errorData = await response.text();
-        console.error('Error del servidor:', errorData);
-        setAgentError(`Error ${response.status}: ${errorData}`);
-      }
-    } catch (error) {
-      console.error('Error cargando agente:', error);
-      setAgentError(error instanceof Error ? error.message : 'Error desconocido');
-    }
-  };
 
   const handleSendMessage = async (messageContent: string = message) => {
     if (!messageContent.trim() || !currentConversation || isSubmitting) return;
@@ -1029,5 +1029,13 @@ function MessageBubble({
         )}
       </div>
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ChatPageContent />
+    </Suspense>
   );
 } 
