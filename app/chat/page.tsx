@@ -561,6 +561,24 @@ function ChatPageContent() {
                   <Bars3Icon className="w-5 h-5" />
                 </button>
               )}
+              
+              {/* Botón para crear nuevo agente */}
+              <button
+                onClick={() => router.push('/dashboard/agents/new')}
+                className="group relative overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95"
+                title="Crear nuevo agente"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative flex items-center gap-2">
+                  <PlusIcon className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" />
+                  <span className="text-sm font-semibold tracking-wide">
+                    CREAR NUEVO AGENTE
+                  </span>
+                </div>
+                {/* Efecto de brillo */}
+                <div className="absolute inset-0 -top-2 -left-2 bg-gradient-to-r from-transparent via-white/20 to-transparent w-4 h-full transform -skew-x-12 group-hover:translate-x-full transition-transform duration-700"></div>
+              </button>
+              
               <div>
                 <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {currentConversation?.title || `Chat con ${agent?.agentName || 'Asistente'}`}
