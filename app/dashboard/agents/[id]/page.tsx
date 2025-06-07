@@ -29,7 +29,11 @@ import {
   Users,
   GitBranch,
   Plus,
-  Minus
+  Minus,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { API_CONFIG } from '@/lib/config';
 
@@ -89,6 +93,16 @@ export default function AgentDetailPage() {
     autoTriggerConditions: [] as string[]
   });
   const [selectedSubAgents, setSelectedSubAgents] = useState<string[]>([]);
+
+  // Estados para colapsar secciones
+  const [collapsedSections, setCollapsedSections] = useState({
+    base: true,
+    objectives: true,
+    rules: true,
+    examples: true,
+    responseFormat: true,
+    orchestration: false // Orquestación expandida por defecto
+  });
 
   // Cargar datos del agente
   useEffect(() => {
@@ -179,8 +193,20 @@ export default function AgentDetailPage() {
     }
   };
 
+  const toggleSection = (section: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section as keyof typeof prev]
+    }));
+  };
+
   const startEditing = (section: string) => {
     setEditing(section);
+    // Expandir la sección cuando se va a editar
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: false
+    }));
   };
 
   const cancelEditing = () => {
@@ -396,315 +422,400 @@ export default function AgentDetailPage() {
             <div className="space-y-6">
               {/* Base Prompt */}
               <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <BookOpen className="w-5 h-5" />
                       Prompt Base
+                      <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">
+                        ({agent.prompt.base ? agent.prompt.base.length : 0} caracteres)
+                      </span>
                     </CardTitle>
-                    {editing !== 'base' && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => startEditing('base')}
+                        onClick={() => toggleSection('base')}
                         className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
-                        <Edit className="w-4 h-4" />
+                        {collapsedSections.base ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </Button>
-                    )}
+                      {editing !== 'base' && !collapsedSections.base && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing('base')}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  {editing === 'base' ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={editData.base}
-                        onChange={(e) => setEditData({...editData, base: e.target.value})}
-                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
-                        placeholder="Describe el rol y personalidad base del agente..."
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => saveSection('base')}
-                          disabled={saving}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={cancelEditing}
-                          className="border-gray-300 dark:border-gray-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                {!collapsedSections.base && (
+                  <CardContent>
+                    {editing === 'base' ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          value={editData.base}
+                          onChange={(e) => setEditData({...editData, base: e.target.value})}
+                          className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
+                          placeholder="Describe el rol y personalidad base del agente..."
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => saveSection('base')}
+                            disabled={saving}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditing}
+                            className="border-gray-300 dark:border-gray-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg">
-                      {agent.prompt.base || 'Sin prompt base definido'}
-                    </p>
-                  )}
-                </CardContent>
+                    ) : (
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg">
+                        {agent.prompt.base || 'Sin prompt base definido'}
+                      </p>
+                    )}
+                  </CardContent>
+                )}
               </Card>
 
               {/* Objectives */}
               <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <Target className="w-5 h-5" />
                       Objetivos ({agent.prompt.objectives?.length || 0})
                     </CardTitle>
-                    {editing !== 'objectives' && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => startEditing('objectives')}
+                        onClick={() => toggleSection('objectives')}
                         className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
-                        <Edit className="w-4 h-4" />
+                        {collapsedSections.objectives ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </Button>
-                    )}
+                      {editing !== 'objectives' && !collapsedSections.objectives && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing('objectives')}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  {editing === 'objectives' ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={editData.objectives}
-                        onChange={(e) => setEditData({...editData, objectives: e.target.value})}
-                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
-                        placeholder="Escribe cada objetivo en una línea separada..."
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => saveSection('objectives')}
-                          disabled={saving}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={cancelEditing}
-                          className="border-gray-300 dark:border-gray-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                {!collapsedSections.objectives && (
+                  <CardContent>
+                    {editing === 'objectives' ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          value={editData.objectives}
+                          onChange={(e) => setEditData({...editData, objectives: e.target.value})}
+                          className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
+                          placeholder="Escribe cada objetivo en una línea separada..."
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => saveSection('objectives')}
+                            disabled={saving}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditing}
+                            className="border-gray-300 dark:border-gray-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <ul className="space-y-2">
-                      {agent.prompt.objectives && agent.prompt.objectives.length > 0 ? (
-                        agent.prompt.objectives.map((objective, index) => (
-                          <li key={index} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
-                            <span className="text-[#00FFC3] mt-1">•</span>
-                            <span>{objective}</span>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="text-gray-500 italic">Sin objetivos definidos</li>
-                      )}
-                    </ul>
-                  )}
-                </CardContent>
+                    ) : (
+                      <ul className="space-y-2">
+                        {agent.prompt.objectives && agent.prompt.objectives.length > 0 ? (
+                          agent.prompt.objectives.map((objective, index) => (
+                            <li key={index} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                              <span className="text-[#00FFC3] mt-1">•</span>
+                              <span>{objective}</span>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="text-gray-500 italic">Sin objetivos definidos</li>
+                        )}
+                      </ul>
+                    )}
+                  </CardContent>
+                )}
               </Card>
 
               {/* Rules */}
               <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <Shield className="w-5 h-5" />
                       Reglas ({agent.prompt.rules?.length || 0})
                     </CardTitle>
-                    {editing !== 'rules' && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => startEditing('rules')}
+                        onClick={() => toggleSection('rules')}
                         className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
-                        <Edit className="w-4 h-4" />
+                        {collapsedSections.rules ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </Button>
-                    )}
+                      {editing !== 'rules' && !collapsedSections.rules && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing('rules')}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  {editing === 'rules' ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={editData.rules}
-                        onChange={(e) => setEditData({...editData, rules: e.target.value})}
-                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
-                        placeholder="Escribe cada regla en una línea separada..."
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => saveSection('rules')}
-                          disabled={saving}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={cancelEditing}
-                          className="border-gray-300 dark:border-gray-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                {!collapsedSections.rules && (
+                  <CardContent>
+                    {editing === 'rules' ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          value={editData.rules}
+                          onChange={(e) => setEditData({...editData, rules: e.target.value})}
+                          className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
+                          placeholder="Escribe cada regla en una línea separada..."
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => saveSection('rules')}
+                            disabled={saving}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditing}
+                            className="border-gray-300 dark:border-gray-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <ul className="space-y-2">
-                      {agent.prompt.rules && agent.prompt.rules.length > 0 ? (
-                        agent.prompt.rules.map((rule, index) => (
-                          <li key={index} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
-                            <span className="text-[#3B82F6] mt-1">•</span>
-                            <span>{rule}</span>
-                          </li>
-                        ))
-                      ) : (
-                        <li className="text-gray-500 italic">Sin reglas definidas</li>
-                      )}
-                    </ul>
-                  )}
-                </CardContent>
+                    ) : (
+                      <ul className="space-y-2">
+                        {agent.prompt.rules && agent.prompt.rules.length > 0 ? (
+                          agent.prompt.rules.map((rule, index) => (
+                            <li key={index} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                              <span className="text-[#3B82F6] mt-1">•</span>
+                              <span>{rule}</span>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="text-gray-500 italic">Sin reglas definidas</li>
+                        )}
+                      </ul>
+                    )}
+                  </CardContent>
+                )}
               </Card>
 
               {/* Examples */}
               <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <BookOpen className="w-5 h-5" />
                       Ejemplos
+                      <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">
+                        ({agent.prompt.examples ? agent.prompt.examples.length : 0} caracteres)
+                      </span>
                     </CardTitle>
-                    {editing !== 'examples' && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => startEditing('examples')}
+                        onClick={() => toggleSection('examples')}
                         className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
-                        <Edit className="w-4 h-4" />
+                        {collapsedSections.examples ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </Button>
-                    )}
+                      {editing !== 'examples' && !collapsedSections.examples && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing('examples')}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  {editing === 'examples' ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={editData.examples}
-                        onChange={(e) => setEditData({...editData, examples: e.target.value})}
-                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
-                        placeholder="Ejemplos de conversaciones o casos de uso..."
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => saveSection('examples')}
-                          disabled={saving}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={cancelEditing}
-                          className="border-gray-300 dark:border-gray-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                {!collapsedSections.examples && (
+                  <CardContent>
+                    {editing === 'examples' ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          value={editData.examples}
+                          onChange={(e) => setEditData({...editData, examples: e.target.value})}
+                          className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
+                          placeholder="Ejemplos de conversaciones o casos de uso..."
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => saveSection('examples')}
+                            disabled={saving}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditing}
+                            className="border-gray-300 dark:border-gray-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
-                      {agent.prompt.examples || 'Sin ejemplos definidos'}
-                    </p>
-                  )}
-                </CardContent>
+                    ) : (
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
+                        {agent.prompt.examples || 'Sin ejemplos definidos'}
+                      </p>
+                    )}
+                  </CardContent>
+                )}
               </Card>
 
               {/* Response Format */}
               <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
                       <FileText className="w-5 h-5" />
                       Formato de Respuesta
+                      <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">
+                        ({agent.prompt.responseFormat ? agent.prompt.responseFormat.length : 0} caracteres)
+                      </span>
                     </CardTitle>
-                    {editing !== 'responseFormat' && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => startEditing('responseFormat')}
+                        onClick={() => toggleSection('responseFormat')}
                         className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                       >
-                        <Edit className="w-4 h-4" />
+                        {collapsedSections.responseFormat ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                       </Button>
-                    )}
+                      {editing !== 'responseFormat' && !collapsedSections.responseFormat && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing('responseFormat')}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  {editing === 'responseFormat' ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={editData.responseFormat}
-                        onChange={(e) => setEditData({...editData, responseFormat: e.target.value})}
-                        className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
-                        placeholder="Especifica cómo debe formatear las respuestas (JSON, markdown, etc.)..."
-                      />
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => saveSection('responseFormat')}
-                          disabled={saving}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={cancelEditing}
-                          className="border-gray-300 dark:border-gray-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                {!collapsedSections.responseFormat && (
+                  <CardContent>
+                    {editing === 'responseFormat' ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          value={editData.responseFormat}
+                          onChange={(e) => setEditData({...editData, responseFormat: e.target.value})}
+                          className="bg-white dark:bg-gray-800/50 border-gray-300 dark:border-gray-600/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 min-h-[120px]"
+                          placeholder="Especifica cómo debe formatear las respuestas (JSON, markdown, etc.)..."
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => saveSection('responseFormat')}
+                            disabled={saving}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditing}
+                            className="border-gray-300 dark:border-gray-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
-                      {agent.prompt.responseFormat || 'Sin formato específico definido'}
-                    </p>
-                  )}
-                </CardContent>
+                    ) : (
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
+                        {agent.prompt.responseFormat || 'Sin formato específico definido'}
+                      </p>
+                    )}
+                  </CardContent>
+                )}
               </Card>
 
               {/* Multi-Agente Configuration (Fase 2) */}
               <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
-                    <GitBranch className="w-5 h-5" />
-                    Configuración Multi-Agente
-                    <span className="text-xs bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] text-[#0E0E10] px-2 py-1 rounded-full font-semibold">FASE 2</span>
-                  </CardTitle>
-                  <CardDescription className="text-gray-600 dark:text-gray-400">
-                    Configura sub-agentes y orquestación automática
-                  </CardDescription>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+                        <GitBranch className="w-5 h-5" />
+                        Configuración Multi-Agente
+                        <span className="text-xs bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] text-[#0E0E10] px-2 py-1 rounded-full font-semibold">FASE 2</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">
+                          ({selectedSubAgents.length} sub-agentes)
+                        </span>
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 dark:text-gray-400">
+                        Configura sub-agentes y orquestación automática
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleSection('orchestration')}
+                      className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    >
+                      {collapsedSections.orchestration ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                {!collapsedSections.orchestration && (
+                  <CardContent className="space-y-6">
                   {/* Toggle de Orquestación */}
                   <div className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-800/30 rounded-lg">
                     <div>
@@ -848,7 +959,8 @@ export default function AgentDetailPage() {
                       </Button>
                     </>
                   )}
-                </CardContent>
+                  </CardContent>
+                )}
               </Card>
             </div>
 
