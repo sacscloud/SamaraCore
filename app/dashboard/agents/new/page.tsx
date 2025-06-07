@@ -170,7 +170,14 @@ export default function NewAgentPage() {
   
   // Estados para auto-generación
   const [generatingPrompts, setGeneratingPrompts] = useState(false);
-  const [generatingWhenToUse, setGeneratingWhenToUse] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  // Estados para Paso 4 - Multi-Agent
+  const [availableAgents, setAvailableAgents] = useState<any[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [showAgentSelector, setShowAgentSelector] = useState(false);
+  const [selectedSubAgents, setSelectedSubAgents] = useState<any[]>([]);
+  const [generatingRelation, setGeneratingRelation] = useState<string | null>(null);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -214,7 +221,7 @@ export default function NewAgentPage() {
   // Función para generar prompts automáticamente (Paso 2 → 3)
   const generatePrompts = async () => {
     if (!formData.categoria || !formData.descripcionLibre.trim()) {
-      alert('Por favor completa la categoría y descripción antes de generar prompts');
+      // En lugar de alert, simplemente no hacer nada - el botón ya está disabled
       return;
     }
 
@@ -241,15 +248,113 @@ export default function NewAgentPage() {
         
         nextStep();
       } else {
-        alert(`Error generando prompts: ${result.error}`);
-        console.error('Error:', result.error);
+        setErrorMessage('Error generando prompts. Inténtalo nuevamente.');
+        console.error('Error generando prompts:', result.error);
       }
     } catch (error) {
-      alert('Error conectando con el generador de prompts');
-      console.error('Error:', error);
+      setErrorMessage('Error conectando con el generador de prompts');
+      console.error('Error conectando con el generador de prompts:', error);
     } finally {
       setGeneratingPrompts(false);
     }
+  };
+
+  // Cargar agentes disponibles para orquestación
+  const loadAvailableAgents = async () => {
+    if (!user) return;
+    
+    setLoadingAgents(true);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/agents', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        // Filtrar agentes que no sean el actual
+        const otherAgents = result.agents.filter((agent: any) => agent.agentId !== createdAgentId);
+        setAvailableAgents(otherAgents);
+      }
+    } catch (error) {
+      console.error('Error cargando agentes:', error);
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
+  // Generar "cuandoUsar" para relación específica orquestador → orquestado
+  const generateRelationCuandoUsar = async (subAgent: any) => {
+    setGeneratingRelation(subAgent.agentId);
+    
+    try {
+      const contextMessage = `
+AGENTE ORQUESTADOR: ${formData.agentName}
+Descripción: ${formData.descripcionLibre}
+
+AGENTE A USAR: ${subAgent.agentName}  
+Descripción: ${subAgent.descripcionLibre || 'No especificada'}
+
+Genera un texto que indique cuándo el agente "${formData.agentName}" debe usar al agente "${subAgent.agentName}".
+
+Ejemplo: "Usa al agente ${subAgent.agentName} cuando el usuario solicite..."`;
+
+      const result = await generateWhenToUse(
+        formData.agentName,
+        'Orquestación',
+        contextMessage,
+        { base: contextMessage, objectives: '' }
+      );
+      
+      if (result.success && 'cuandoUsar' in result) {
+        // Actualizar el sub-agente con el cuandoUsar generado
+        setSelectedSubAgents(prev => 
+          prev.map(sa => 
+            sa.agentId === subAgent.agentId 
+              ? { ...sa, cuandoUsar: result.cuandoUsar }
+              : sa
+          )
+        );
+      } else {
+        console.error('Error generando relación:', 'error' in result ? result.error : 'Error desconocido');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setGeneratingRelation(null);
+    }
+  };
+
+  // Agregar sub-agente a la orquestación
+  const addSubAgent = async (agent: any) => {
+    const subAgent = {
+      agentId: agent.agentId,
+      agentName: agent.agentName,
+      categoria: agent.categoria,
+      descripcionLibre: agent.descripcionLibre,
+      cuandoUsar: '', // Se generará automáticamente
+      priority: selectedSubAgents.length + 1
+    };
+    
+    setSelectedSubAgents(prev => [...prev, subAgent]);
+    setShowAgentSelector(false);
+    
+    // Generar automáticamente el "cuandoUsar" para esta relación
+    await generateRelationCuandoUsar(subAgent);
+  };
+
+  // Remover sub-agente
+  const removeSubAgent = (agentId: string) => {
+    setSelectedSubAgents(prev => prev.filter(sa => sa.agentId !== agentId));
+  };
+
+  // Actualizar "cuandoUsar" de sub-agente
+  const updateSubAgentCuandoUsar = (agentId: string, cuandoUsar: string) => {
+    setSelectedSubAgents(prev => 
+      prev.map(sa => 
+        sa.agentId === agentId ? { ...sa, cuandoUsar } : sa
+      )
+    );
   };
 
   // Función para guardar agente en MongoDB (Paso 3 → 4)
@@ -285,7 +390,13 @@ export default function NewAgentPage() {
           description: formData.descripcionLibre,
           categoria: formData.categoria,
           configuracion: formData.configuracion,
-          prompt: cleanedPrompt
+          prompt: cleanedPrompt,
+          // Configuración multi-agente
+          subAgents: selectedSubAgents,
+          orchestration: {
+            enabled: selectedSubAgents.length > 0,
+            maxDepth: 3
+          }
         }),
       });
 
@@ -296,12 +407,13 @@ export default function NewAgentPage() {
         nextStep();
         return true;
       } else {
-        alert(`Error: ${result.error}`);
+        setErrorMessage(`Error creando agente: ${result.error}`);
+        console.error('Error creando agente:', result.error);
         return false;
       }
     } catch (error) {
+      setErrorMessage('Error inesperado al crear el agente');
       console.error('Error creando agente:', error);
-      alert('Error inesperado al crear el agente');
       return false;
     } finally {
       setLoading(false);
@@ -454,6 +566,17 @@ export default function NewAgentPage() {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
               💡 Esta descripción se utilizará para generar automáticamente todos los prompts del agente
             </p>
+            {errorMessage && (
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-lg">
+                <p className="text-sm text-red-700 dark:text-red-300">{errorMessage}</p>
+                <button 
+                  onClick={() => setErrorMessage('')}
+                  className="text-xs text-red-500 hover:text-red-700 mt-1"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -467,8 +590,32 @@ export default function NewAgentPage() {
           <ArrowLeft className="w-4 h-4 mr-2" /> Anterior
         </Button>
         <Button 
-          onClick={generatePrompts}
-          disabled={generatingPrompts || !formData.agentName.trim() || !formData.descripcionLibre.trim()}
+          onClick={() => {
+            // Validación en Paso 2
+            if (!formData.agentName.trim()) {
+              setErrorMessage('Por favor ingresa el nombre del agente');
+              return;
+            }
+            if (formData.agentName.trim().length < 3 || formData.agentName.trim().length > 50) {
+              setErrorMessage('El nombre del agente debe tener entre 3 y 50 caracteres');
+              return;
+            }
+            if (!formData.descripcionLibre.trim()) {
+              setErrorMessage('Por favor describe tu agente');
+              return;
+            }
+            if (formData.descripcionLibre.trim().length < 10) {
+              setErrorMessage('La descripción debe tener al menos 10 caracteres');
+              return;
+            }
+            if (formData.descripcionLibre.trim().length > 1000) {
+              setErrorMessage('La descripción no puede exceder 1000 caracteres');
+              return;
+            }
+            setErrorMessage(''); // Limpiar errores
+            generatePrompts();
+          }}
+          disabled={generatingPrompts}
           className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-lg hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300"
         >
           {generatingPrompts ? (
@@ -682,80 +829,193 @@ export default function NewAgentPage() {
           <ArrowLeft className="w-4 h-4 mr-2" /> Anterior
         </Button>
         <Button 
-          onClick={saveAgentToMongoDB}
-          disabled={loading || !formData.prompt.base.trim()}
+          onClick={nextStep}
+          disabled={!formData.prompt.base.trim()}
           className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-lg hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300"
         >
-          {loading ? 'Guardando...' : 'Guardar y Continuar'} <ArrowRight className="w-4 h-4 ml-2" />
+          Continuar <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
     </div>
   );
 
   // Paso 4: Configuración Multi-Agente
-  const renderStep4MultiAgent = () => (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Configuración Multi-Agente
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Configura qué otros agentes puede utilizar tu agente para tareas especializadas
-        </p>
-      </div>
-      
-      <Card className="bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
-        <CardHeader>
-          <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
-            <Network className="w-5 h-5" />
-            Orquestación de Agentes
-          </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
-            Permite que tu agente delegue tareas a otros agentes especializados
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="text-center py-8">
-            <Network className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Configuración Multi-Agente
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Aquí podrás seleccionar agentes de tu cuenta y agentes públicos sugeridos
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              💡 Funcionalidad próximamente disponible
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="flex justify-between">
-        <Button 
-          onClick={prevStep}
-          variant="outline"
-          className="border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-300"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" /> Anterior
-        </Button>
-        <div className="flex gap-4">
-          <Button 
-            onClick={nextStep}
-            variant="outline"
-            className="border-gray-300 dark:border-gray-600/50 text-gray-700 dark:text-gray-300"
-          >
-            Omitir por ahora
+  const renderStep4MultiAgent = () => {
+    // Cargar agentes cuando se entra al paso 4
+    if (currentStep === 4 && availableAgents.length === 0 && !loadingAgents) {
+      loadAvailableAgents();
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <Network className="w-16 h-16 mx-auto text-[#3B82F6] mb-4" />
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Configuración Multi-Agente
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Conecta agentes especializados para crear workflows inteligentes
+          </p>
+        </div>
+
+        {/* Sub-agentes seleccionados */}
+        {selectedSubAgents.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Network className="w-5 h-5" />
+                Agentes Orquestados ({selectedSubAgents.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedSubAgents.map((subAgent, index) => (
+                <div key={subAgent.agentId} className="border border-gray-200 dark:border-gray-700/50 rounded-lg p-4 bg-gray-50 dark:bg-gray-900/40">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] rounded-full flex items-center justify-center text-[#0E0E10] text-sm font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                          {subAgent.agentName}
+                        </h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {AGENT_CATEGORIES.find(c => c.id === subAgent.categoria)?.name || 'Sin categoría'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => removeSubAgent(subAgent.agentId)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Cuándo usar este agente:</Label>
+                    {generatingRelation === subAgent.agentId ? (
+                      <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-[#3B82F6]/10 to-[#00FFC3]/10 border border-[#3B82F6]/20 rounded-lg">
+                        <div className="w-4 h-4 border-2 border-[#3B82F6] border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm text-[#3B82F6] dark:text-[#00FFC3]">
+                          Generando contexto de uso automáticamente...
+                        </span>
+                      </div>
+                    ) : (
+                      <Textarea
+                        value={subAgent.cuandoUsar}
+                        onChange={(e) => updateSubAgentCuandoUsar(subAgent.agentId, e.target.value)}
+                        placeholder="Describe cuándo este agente orquestador debe usar este sub-agente..."
+                        className="min-h-[80px]"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Selector de agentes */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5" />
+              Agregar Agentes
+            </CardTitle>
+            <CardDescription>
+              Selecciona agentes existentes para orquestar
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {showAgentSelector ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Agentes disponibles:</h4>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowAgentSelector(false)}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+                
+                {loadingAgents ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-[#3B82F6] border-t-transparent rounded-full animate-spin mr-3" />
+                    <span className="text-gray-600 dark:text-gray-400">Cargando agentes...</span>
+                  </div>
+                ) : availableAgents.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <Bot className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No tienes otros agentes disponibles</p>
+                    <p className="text-sm">Crea más agentes para poder orquestarlos</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 max-h-64 overflow-y-auto">
+                    {availableAgents
+                      .filter(agent => !selectedSubAgents.some(sa => sa.agentId === agent.agentId))
+                      .map((agent) => (
+                        <div 
+                          key={agent.agentId}
+                          className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                          onClick={() => addSubAgent(agent)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm">
+                              {AGENT_CATEGORIES.find(c => c.id === agent.categoria)?.icon || '🤖'}
+                            </div>
+                            <div>
+                              <h5 className="font-medium text-gray-900 dark:text-gray-100">
+                                {agent.agentName}
+                              </h5>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {AGENT_CATEGORIES.find(c => c.id === agent.categoria)?.name || 'Sin categoría'}
+                              </p>
+                            </div>
+                          </div>
+                          <Button size="sm" variant="ghost" className="text-[#3B82F6] hover:text-[#00FFC3] hover:bg-gradient-to-r hover:from-[#3B82F6]/10 hover:to-[#00FFC3]/10">
+                            Agregar
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center">
+                <Button 
+                  onClick={() => setShowAgentSelector(true)}
+                  className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-lg hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300"
+                >
+                  <Bot className="w-4 h-4 mr-2" />
+                  Seleccionar Agentes
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={prevStep}>
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Anterior
           </Button>
           <Button 
-            onClick={nextStep}
+            onClick={saveAgentToMongoDB}
+            disabled={loading}
             className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] hover:shadow-lg hover:shadow-[#3B82F6]/30 text-[#0E0E10] font-semibold transition-all duration-300"
           >
-            Continuar <ArrowRight className="w-4 h-4 ml-2" />
+            {loading ? 'Guardando...' : (selectedSubAgents.length > 0 ? 'Crear Agente' : 'Crear Agente sin Orquestación')} 
+            {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
           </Button>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Paso 5: Felicitación y finalización
   const renderStep5Congratulations = () => (
@@ -770,6 +1030,8 @@ export default function NewAgentPage() {
         <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
           Has creado exitosamente tu agente <strong>{formData.agentName}</strong>
         </p>
+        
+
         <div className="bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700/50 rounded-lg p-6 max-w-md mx-auto">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${AGENT_CATEGORIES.find(c => c.id === formData.categoria)?.color} flex items-center justify-center text-xl`}>

@@ -68,12 +68,17 @@ export async function generatePrompts(categoria: string, descripcion: string) {
 
 // Generar campo "cuandoUsar" basado en información del agente
 export async function generateWhenToUse(agentName: string, categoria: string, descripcion: string, prompts: any) {
+  // Manejar si objectives es string o array
+  const objectives = Array.isArray(prompts.objectives) 
+    ? prompts.objectives.join(', ')
+    : prompts.objectives || '';
+    
   const message = `Información del agente:
 Nombre: ${agentName}
 Categoría: ${categoria}
 Descripción: ${descripcion}
 Prompt Base: ${prompts.base}
-Objetivos: ${prompts.objectives?.join(', ')}`;
+Objetivos: ${objectives}`;
   
   const result = await callAgent(SYSTEM_AGENTS.WHEN_TO_USE_GENERATOR, message);
   
