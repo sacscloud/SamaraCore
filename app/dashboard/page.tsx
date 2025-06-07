@@ -52,23 +52,23 @@ export default function DashboardPage() {
       cancelText: 'Cancelar',
       variant: 'danger',
       onConfirm: async () => {
-        setDeletingAgentId(agentId);
+      setDeletingAgentId(agentId);
+      
+      try {
+        const result = await deleteAgent(agentId);
         
-        try {
-          const result = await deleteAgent(agentId);
-          
-          if (result.success) {
-            await fetchAgents();
-          } else {
+        if (result.success) {
+          await fetchAgents();
+        } else {
             throw new Error(result.error || 'Error al eliminar el agente');
-          }
-        } catch (error) {
-          console.error('Error al eliminar agente:', error);
-          throw error;
-        } finally {
-          setDeletingAgentId(null);
         }
+      } catch (error) {
+        console.error('Error al eliminar agente:', error);
+          throw error;
+      } finally {
+        setDeletingAgentId(null);
       }
+    }
     });
   };
 

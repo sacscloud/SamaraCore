@@ -21,14 +21,14 @@ export async function GET(
       agentId: params.id,
       user_id: authResult.userId
     });
-
+    
     if (!agent) {
       return NextResponse.json(
         { success: false, error: 'Agente no encontrado' },
         { status: 404 }
       );
     }
-
+    
     return NextResponse.json({ 
       success: true, 
       agent: { ...agent, _id: agent._id.toString() }
