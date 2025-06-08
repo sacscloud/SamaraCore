@@ -187,19 +187,26 @@ function ChatPageContent() {
       return;
     }
 
+    setIsSubmitting(true);
+    
     // Si no hay conversación actual, crear una nueva
-    if (!currentConversation) {
-      await handleNewConversation();
-      // La función se llamará de nuevo cuando se cree la conversación
-      return;
+    let conversationToUse = currentConversation;
+    if (!conversationToUse) {
+      const newConversation = await createConversation('Nueva conversación');
+      if (!newConversation) {
+        setIsSubmitting(false);
+        return;
+      }
+      conversationToUse = newConversation;
+      setCurrentConversation(newConversation);
     }
 
-    setIsSubmitting(true);
+    // Solo limpiar el mensaje después de asegurar que tenemos una conversación
     setMessage('');
 
     try {
       // Agregar mensaje del usuario
-      const userMessage = await addMessage(currentConversation.conversationId, {
+      const userMessage = await addMessage(conversationToUse.conversationId, {
         role: 'user',
         content: messageContent.trim()
       });
