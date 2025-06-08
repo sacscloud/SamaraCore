@@ -201,7 +201,7 @@ export default function AgentDetailPage() {
             examples: foundAgent.prompt.examples || '',
             responseFormat: foundAgent.prompt.responseFormat || '',
             model: foundAgent.model || foundAgent.configuracion?.modelo || 'gpt-3.5-turbo',
-            temperatura: foundAgent.temperatura || foundAgent.configuracion?.temperatura || 0.7
+            temperatura: foundAgent.configuracion?.temperatura || 0.7
           });
           
           // Inicializar datos de orquestación (Fase 2)
@@ -319,8 +319,10 @@ export default function AgentDetailPage() {
         // Actualizar configuración del modelo
         updateData = {
           agentId: agent.agentId,
-          model: editData.model,
-          temperatura: editData.temperatura
+          configuracion: {
+            modelo: editData.model,
+            temperatura: editData.temperatura
+          }
         };
       } else {
         // Preparar los datos actualizados para prompts
