@@ -36,11 +36,57 @@ import {
   ChevronRight,
   Globe,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Cpu,
+  Sliders
 } from 'lucide-react';
 import { API_CONFIG } from '@/lib/config';
 import { useConfirmationModal } from '@/components/ui/confirmation-modal';
 import { useSuccessModal } from '@/components/ui/success-modal';
+
+// Modelos disponibles (reutilizando de new/page.tsx)
+const AVAILABLE_MODELS = [
+  {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    description: 'Balance perfecto entre calidad y velocidad. Ideal para la mayoría de agentes.',
+    category: 'Recomendado',
+    icon: '⚡',
+    color: 'from-green-500 to-green-600'
+  },
+  {
+    id: 'gpt-4o',
+    name: 'GPT-4o',
+    description: 'Máxima calidad para análisis complejos y tareas que requieren razonamiento avanzado.',
+    category: 'Análisis Profundo',
+    icon: '🧠',
+    color: 'from-[#3B82F6] to-[#00FFC3]'
+  },
+  {
+    id: 'gpt-4-turbo',
+    name: 'GPT-4 Turbo',
+    description: 'Excelente para tareas creativas y generación de contenido extenso.',
+    category: 'Creatividad',
+    icon: '🎨',
+    color: 'from-purple-500 to-purple-600'
+  },
+  {
+    id: 'gpt-3.5-turbo',
+    name: 'GPT-3.5 Turbo',
+    description: 'Rápido y económico. Perfecto para respuestas directas y tareas simples.',
+    category: 'Eficiencia',
+    icon: '🚀',
+    color: 'from-orange-500 to-orange-600'
+  },
+  {
+    id: 'gpt-4',
+    name: 'GPT-4',
+    description: 'Modelo base confiable para tareas generales que requieren precisión.',
+    category: 'Confiable',
+    icon: '🎯',
+    color: 'from-indigo-500 to-indigo-600'
+  }
+];
 
 interface Agent {
   _id: string;
@@ -50,6 +96,12 @@ interface Agent {
   user_id: string;
   status: 'active' | 'inactive';
   isPublic?: boolean;
+  model?: string;
+  temperatura?: number;
+  configuracion?: {
+    modelo?: string;
+    temperatura?: number;
+  };
   prompt: {
     base: string;
     objectives: string[];
@@ -90,7 +142,10 @@ export default function AgentDetailPage() {
     objectives: '',
     rules: '',
     examples: '',
-    responseFormat: ''
+    responseFormat: '',
+    // Configuración técnica
+    model: '',
+    temperatura: 0.7
   });
 
   // Estados para Multi-Agente (Fase 2)
@@ -109,6 +164,7 @@ export default function AgentDetailPage() {
     rules: true,
     examples: true,
     responseFormat: true,
+    modelConfig: true, // Nueva sección
     orchestration: false // Orquestación expandida por defecto
   });
 
@@ -144,7 +200,9 @@ export default function AgentDetailPage() {
             objectives: foundAgent.prompt.objectives?.join('\n') || '',
             rules: foundAgent.prompt.rules?.join('\n') || '',
             examples: foundAgent.prompt.examples || '',
-            responseFormat: foundAgent.prompt.responseFormat || ''
+            responseFormat: foundAgent.prompt.responseFormat || '',
+            model: foundAgent.model || foundAgent.configuracion?.modelo || 'gpt-3.5-turbo',
+            temperatura: foundAgent.temperatura || foundAgent.configuracion?.temperatura || 0.7
           });
           
           // Inicializar datos de orquestación (Fase 2)
@@ -242,7 +300,9 @@ export default function AgentDetailPage() {
       objectives: agent.prompt.objectives?.join('\n') || '',
       rules: agent.prompt.rules?.join('\n') || '',
       examples: agent.prompt.examples || '',
-      responseFormat: agent.prompt.responseFormat || ''
+      responseFormat: agent.prompt.responseFormat || '',
+      model: agent.model || agent.configuracion?.modelo || 'gpt-3.5-turbo',
+      temperatura: agent.temperatura || agent.configuracion?.temperatura || 0.7
     });
   };
 
@@ -254,13 +314,29 @@ export default function AgentDetailPage() {
     try {
       const token = await user.getIdToken();
       
-             // Preparar los datos actualizados
-       const updatedPrompt = {
-         ...agent.prompt,
-         [section]: section === 'objectives' || section === 'rules' 
-           ? (editData[section as keyof typeof editData] as string).split('\n').filter(item => item.trim() !== '')
-           : editData[section as keyof typeof editData]
-       };
+      let updateData: any = {};
+      
+      if (section === 'modelConfig') {
+        // Actualizar configuración del modelo
+        updateData = {
+          agentId: agent.agentId,
+          model: editData.model,
+          temperatura: editData.temperatura
+        };
+      } else {
+        // Preparar los datos actualizados para prompts
+        const updatedPrompt = {
+          ...agent.prompt,
+          [section]: section === 'objectives' || section === 'rules' 
+            ? (editData[section as keyof typeof editData] as string).split('\n').filter(item => item.trim() !== '')
+            : editData[section as keyof typeof editData]
+        };
+        
+        updateData = {
+          agentId: agent.agentId,
+          prompt: updatedPrompt
+        };
+      }
 
       const response = await fetch(`/api/agents`, {
         method: 'PUT',
@@ -268,10 +344,7 @@ export default function AgentDetailPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          agentId: agent.agentId,
-          prompt: updatedPrompt
-        }),
+        body: JSON.stringify(updateData),
       });
 
       const result = await response.json();
@@ -911,6 +984,165 @@ export default function AgentDetailPage() {
                       <p className="text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg whitespace-pre-wrap">
                         {agent.prompt.responseFormat || 'Sin formato específico definido'}
                       </p>
+                    )}
+                  </CardContent>
+                )}
+              </Card>
+
+              {/* Configuración del Modelo */}
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+                      <Cpu className="w-5 h-5" />
+                      Configuración del Modelo
+                      <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">
+                        ({agent.model || agent.configuracion?.modelo || 'gpt-3.5-turbo'})
+                      </span>
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSection('modelConfig')}
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      >
+                        {collapsedSections.modelConfig ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </Button>
+                      {editing !== 'modelConfig' && !collapsedSections.modelConfig && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing('modelConfig')}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                {!collapsedSections.modelConfig && (
+                  <CardContent>
+                    {editing === 'modelConfig' ? (
+                      <div className="space-y-6">
+                        {/* Selección de Modelo */}
+                        <div>
+                          <label className="text-gray-900 dark:text-white font-semibold mb-3 block">
+                            Modelo de IA
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {AVAILABLE_MODELS.map((model) => (
+                              <Card 
+                                key={model.id}
+                                className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
+                                  editData.model === model.id 
+                                    ? 'ring-2 ring-[#3B82F6] bg-gradient-to-r from-[#3B82F6]/10 to-[#00FFC3]/10' 
+                                    : 'bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                                }`}
+                                onClick={() => setEditData({...editData, model: model.id})}
+                              >
+                                <CardContent className="p-4 text-center">
+                                  <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${model.color} flex items-center justify-center text-xl`}>
+                                    {model.icon}
+                                  </div>
+                                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+                                    {model.name}
+                                  </h4>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                    {model.category}
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    {model.description}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Temperatura */}
+                        <div>
+                          <label className="text-gray-900 dark:text-white font-semibold mb-3 block">
+                            <Sliders className="w-4 h-4 inline mr-2" />
+                            Temperatura: {editData.temperatura}
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="2"
+                            step="0.1"
+                            value={editData.temperatura}
+                            onChange={(e) => setEditData({...editData, temperatura: parseFloat(e.target.value)})}
+                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                          />
+                          <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-2">
+                            <span>0.0 - Más preciso</span>
+                            <span>1.0 - Balanceado</span>
+                            <span>2.0 - Más creativo</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => saveSection('modelConfig')}
+                            disabled={saving}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditing}
+                            className="border-gray-300 dark:border-gray-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] rounded-lg flex items-center justify-center text-[#0E0E10] text-sm">
+                              {AVAILABLE_MODELS.find(m => m.id === (agent.model || agent.configuracion?.modelo))?.icon || '🤖'}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900 dark:text-white">
+                                {AVAILABLE_MODELS.find(m => m.id === (agent.model || agent.configuracion?.modelo))?.name || 'Modelo no especificado'}
+                              </h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {AVAILABLE_MODELS.find(m => m.id === (agent.model || agent.configuracion?.modelo))?.category || 'Sin categoría'}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {AVAILABLE_MODELS.find(m => m.id === (agent.model || agent.configuracion?.modelo))?.description || 'Modelo por defecto del sistema'}
+                          </p>
+                        </div>
+                        
+                        <div className="bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">Temperatura:</span>
+                            <span className="text-[#3B82F6] font-semibold">
+                              {agent.temperatura || agent.configuracion?.temperatura || 0.7}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
+                            <div 
+                              className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] h-2 rounded-full" 
+                              style={{ width: `${((agent.temperatura || agent.configuracion?.temperatura || 0.7) / 2) * 100}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {(agent.temperatura || agent.configuracion?.temperatura || 0.7) < 0.5 ? 'Respuestas más precisas y consistentes' : 
+                             (agent.temperatura || agent.configuracion?.temperatura || 0.7) > 1.5 ? 'Respuestas más creativas y variadas' : 
+                             'Balance entre precisión y creatividad'}
+                          </p>
+                        </div>
+                      </div>
                     )}
                   </CardContent>
                 )}

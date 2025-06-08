@@ -32,14 +32,17 @@ async function callAgent(agentId: string, message: string) {
 
 // Generar prompts completos basado en categoría y descripción
 export async function generatePrompts(categoria: string, descripcion: string) {
-  const message = `Categoría: ${categoria}\nDescripción: ${descripcion}`;
+  const message = `Descripción: ${descripcion}`;
   
   const result = await callAgent(SYSTEM_AGENTS.PROMPT_GENERATOR, message);
   
   if (result.success) {
     try {
       // Intentar parsear el JSON devuelto por el agente
-      const promptData = JSON.parse(result.data);
+
+      //limpiar el prompt del agente
+      const prompt = result.data.replace(/^```json\n|```$/g, ''); 
+      const promptData = JSON.parse(prompt);
       return {
         success: true,
         prompts: {
