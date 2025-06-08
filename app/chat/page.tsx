@@ -205,6 +205,10 @@ function ChatPageContent() {
     setMessage('');
 
     try {
+      // En este punto, activeConversation está garantizado que no es null
+      if (!activeConversation) {
+        throw new Error('No se pudo obtener una conversación activa');
+      }
 
       // Agregar mensaje del usuario
       const userMessage = await addMessage(activeConversation.conversationId, {
