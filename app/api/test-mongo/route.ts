@@ -73,6 +73,19 @@ export async function GET(request: NextRequest) {
       .limit(3)
       .toArray();
     
+    // Obtener todos los agentes para debugging
+    const agents = await db.collection('agents').find({}).toArray();
+    
+    // Contar total de agentes
+    const totalCount = await db.collection('agents').countDocuments();
+    
+    // Obtener agentes públicos
+    const publicAgents = await db.collection('agents')
+      .find({ isPublic: true })
+      .toArray();
+    
+
+    
     const result = {
       success: true,
       message: 'MongoDB Atlas funciona correctamente',
@@ -90,6 +103,15 @@ export async function GET(request: NextRequest) {
           agentId: agent.agentId,
           agentName: agent.agentName,
           prompt: agent.prompt
+        })),
+        totalAgents: totalCount,
+        publicAgentsCount: publicAgents.length,
+        allAgents: agents.map(agent => ({
+          agentId: agent.agentId,
+          agentName: agent.agentName,
+          user_id: agent.user_id,
+          isPublic: agent.isPublic,
+          status: agent.status
         })),
         timestamp: new Date().toISOString()
       }

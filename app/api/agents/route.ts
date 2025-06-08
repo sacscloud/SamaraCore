@@ -23,7 +23,7 @@ function validateTemperature(temperatura: any): { isValid: boolean; value: numbe
   return { isValid: true, value: temp };
 }
 
-// GET - Listar agentes del usuario
+// GET - Listar agentes del usuario o agentes públicos
 export async function GET(request: NextRequest) {
   // Verificar autenticación
   const authResult = await verifyFirebaseAuth(request);
@@ -32,17 +32,94 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const { searchParams } = new URL(request.url);
+    const isPublicFilter = searchParams.get('public') === 'true';
+    const categoria = searchParams.get('categoria');
+    const search = searchParams.get('search');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '12');
+    const skip = (page - 1) * limit;
+
     const client = await clientPromise;
     const db = client.db('samaracore');
+    
+    // Construir query
+    let query: any = {};
+    
+    if (isPublicFilter) {
+      // Solo agentes públicos de todos los usuarios
+      query.isPublic = true;
+    } else {
+      // Solo agentes del usuario autenticado
+      query.user_id = authResult.userId;
+    }
+    
+    // Filtros adicionales
+    if (categoria && categoria !== 'todas') {
+      query.categoria = categoria;
+    }
+    
+    if (search) {
+      query.$or = [
+        { agentName: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Obtener agentes con paginación
     const agents = await db.collection('agents')
-      .find({ user_id: authResult.userId })
+      .find(query)
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .toArray();
+
+    // Obtener total para paginación
+    const total = await db.collection('agents').countDocuments(query);
+
+    // Si son agentes públicos, obtener información del creador
+    if (isPublicFilter) {
+      const agentsWithCreator = await Promise.all(
+        agents.map(async (agent) => {
+          try {
+            const user = await db.collection('users').findOne({ uid: agent.user_id });
+            return {
+              ...agent,
+              creator: user ? {
+                email: user.email,
+                displayName: user.displayName || user.email
+              } : null
+            };
+          } catch (error) {
+            console.error('Error obteniendo creador:', error);
+            return agent;
+          }
+        })
+      );
+      
+      return NextResponse.json({
+        success: true,
+        agents: agentsWithCreator,
+        count: agentsWithCreator.length,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      });
+    }
 
     return NextResponse.json({
       success: true,
       agents: agents,
-      count: agents.length
+      count: agents.length,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
     });
 
   } catch (error) {
@@ -126,7 +203,14 @@ export async function POST(request: NextRequest) {
         temperatura: tempValidation.value
       },
       user_id: authResult.userId,
+      // Información del creador desde Firebase
+      creator: {
+        name: authResult.user?.name || authResult.user?.displayName || 'Usuario',
+        email: authResult.user?.email || '',
+        uid: authResult.userId
+      },
       status: 'active',
+      isPublic: false, // Por defecto privado
       prompt: {
         base: prompt.base || 'Eres un asistente útil y profesional.',
         objectives: prompt.objectives || [],

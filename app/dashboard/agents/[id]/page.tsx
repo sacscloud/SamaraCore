@@ -33,9 +33,60 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Globe,
+  Lock,
+  AlertCircle,
+  Cpu,
+  Sliders
 } from 'lucide-react';
 import { API_CONFIG } from '@/lib/config';
+import { useConfirmationModal } from '@/components/ui/confirmation-modal';
+import { useSuccessModal } from '@/components/ui/success-modal';
+
+// Modelos disponibles (reutilizando de new/page.tsx)
+const AVAILABLE_MODELS = [
+  {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o Mini',
+    description: 'Balance perfecto entre calidad y velocidad. Ideal para la mayoría de agentes.',
+    category: 'Recomendado',
+    icon: '⚡',
+    color: 'from-green-500 to-green-600'
+  },
+  {
+    id: 'gpt-4o',
+    name: 'GPT-4o',
+    description: 'Máxima calidad para análisis complejos y tareas que requieren razonamiento avanzado.',
+    category: 'Análisis Profundo',
+    icon: '🧠',
+    color: 'from-[#3B82F6] to-[#00FFC3]'
+  },
+  {
+    id: 'gpt-4-turbo',
+    name: 'GPT-4 Turbo',
+    description: 'Excelente para tareas creativas y generación de contenido extenso.',
+    category: 'Creatividad',
+    icon: '🎨',
+    color: 'from-purple-500 to-purple-600'
+  },
+  {
+    id: 'gpt-3.5-turbo',
+    name: 'GPT-3.5 Turbo',
+    description: 'Rápido y económico. Perfecto para respuestas directas y tareas simples.',
+    category: 'Eficiencia',
+    icon: '🚀',
+    color: 'from-orange-500 to-orange-600'
+  },
+  {
+    id: 'gpt-4',
+    name: 'GPT-4',
+    description: 'Modelo base confiable para tareas generales que requieren precisión.',
+    category: 'Confiable',
+    icon: '🎯',
+    color: 'from-indigo-500 to-indigo-600'
+  }
+];
 
 interface Agent {
   _id: string;
@@ -44,6 +95,12 @@ interface Agent {
   description: string;
   user_id: string;
   status: 'active' | 'inactive';
+  isPublic?: boolean;
+  model?: string;
+  configuracion?: {
+    modelo?: string;
+    temperatura?: number;
+  };
   prompt: {
     base: string;
     objectives: string[];
@@ -70,6 +127,7 @@ export default function AgentDetailPage() {
   
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [testMessage, setTestMessage] = useState('');
   const [testResponse, setTestResponse] = useState('');
   const [testing, setTesting] = useState(false);
@@ -77,12 +135,16 @@ export default function AgentDetailPage() {
   // Estados para edición
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [changingVisibility, setChangingVisibility] = useState(false);
   const [editData, setEditData] = useState({
     base: '',
     objectives: '',
     rules: '',
     examples: '',
-    responseFormat: ''
+    responseFormat: '',
+    // Configuración técnica
+    model: '',
+    temperatura: 0.7
   });
 
   // Estados para Multi-Agente (Fase 2)
@@ -101,8 +163,13 @@ export default function AgentDetailPage() {
     rules: true,
     examples: true,
     responseFormat: true,
+    modelConfig: true, // Nueva sección
     orchestration: false // Orquestación expandida por defecto
   });
+
+  // Modales
+  const { showConfirmation, ConfirmationModal } = useConfirmationModal();
+  const { showSuccess, SuccessModal } = useSuccessModal();
 
   // Cargar datos del agente
   useEffect(() => {
@@ -113,44 +180,58 @@ export default function AgentDetailPage() {
         // Obtener token de autenticación
         const token = await user.getIdToken();
         
-        const response = await fetch(`/api/agents`, {
+        // Primero obtener el agente específico
+        const agentResponse = await fetch(`/api/agents/${agentId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        const result = await response.json();
         
-        if (result.success) {
-          const foundAgent = result.agents.find((a: Agent) => a.agentId === agentId);
-          if (foundAgent) {
-            setAgent(foundAgent);
-            // Inicializar datos de edición
-            setEditData({
-              base: foundAgent.prompt.base || '',
-              objectives: foundAgent.prompt.objectives?.join('\n') || '',
-              rules: foundAgent.prompt.rules?.join('\n') || '',
-              examples: foundAgent.prompt.examples || '',
-              responseFormat: foundAgent.prompt.responseFormat || ''
-            });
-            
-            // Inicializar datos de orquestación (Fase 2)
-            setOrchestrationData({
-              enabled: foundAgent.orchestration?.enabled || false,
-              maxDepth: foundAgent.orchestration?.maxDepth || 3,
-              autoTriggerConditions: foundAgent.orchestration?.autoTriggerConditions || []
-            });
-            setSelectedSubAgents(foundAgent.subAgents || []);
-            
+        const agentResult = await agentResponse.json();
+        
+        if (agentResult.success && agentResult.agent) {
+          const foundAgent = agentResult.agent;
+          setAgent(foundAgent);
+          
+          // Inicializar datos de edición
+          setEditData({
+            base: foundAgent.prompt.base || '',
+            objectives: foundAgent.prompt.objectives?.join('\n') || '',
+            rules: foundAgent.prompt.rules?.join('\n') || '',
+            examples: foundAgent.prompt.examples || '',
+            responseFormat: foundAgent.prompt.responseFormat || '',
+            model: foundAgent.model || foundAgent.configuracion?.modelo || 'gpt-3.5-turbo',
+            temperatura: foundAgent.configuracion?.temperatura || 0.7
+          });
+          
+          // Inicializar datos de orquestación (Fase 2)
+          setOrchestrationData({
+            enabled: foundAgent.orchestration?.enabled || false,
+            maxDepth: foundAgent.orchestration?.maxDepth || 3,
+            autoTriggerConditions: foundAgent.orchestration?.autoTriggerConditions || []
+          });
+          setSelectedSubAgents(foundAgent.subAgents || []);
+          
+          // Obtener otros agentes del usuario para la orquestación
+          const allAgentsResponse = await fetch(`/api/agents`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          const allAgentsResult = await allAgentsResponse.json();
+          if (allAgentsResult.success) {
             // Filtrar agentes disponibles (excluir el agente actual)
-            const otherAgents = result.agents.filter((a: Agent) => a.agentId !== agentId);
+            const otherAgents = allAgentsResult.agents.filter((a: Agent) => a.agentId !== agentId);
             setAvailableAgents(otherAgents);
-          } else {
-            router.push('/dashboard');
           }
+        } else {
+          console.error('Error:', agentResult.error || 'Agente no encontrado');
+          setError(agentResult.error || 'Agente no encontrado');
         }
       } catch (error) {
         console.error('Error cargando agente:', error);
-        router.push('/dashboard');
+        setError('Error de conexión al cargar el agente');
       } finally {
         setLoading(false);
       }
@@ -218,7 +299,9 @@ export default function AgentDetailPage() {
       objectives: agent.prompt.objectives?.join('\n') || '',
       rules: agent.prompt.rules?.join('\n') || '',
       examples: agent.prompt.examples || '',
-      responseFormat: agent.prompt.responseFormat || ''
+      responseFormat: agent.prompt.responseFormat || '',
+      model: agent.model || agent.configuracion?.modelo || 'gpt-3.5-turbo',
+      temperatura: agent.configuracion?.temperatura || 0.7
     });
   };
 
@@ -230,13 +313,31 @@ export default function AgentDetailPage() {
     try {
       const token = await user.getIdToken();
       
-             // Preparar los datos actualizados
-       const updatedPrompt = {
-         ...agent.prompt,
-         [section]: section === 'objectives' || section === 'rules' 
-           ? (editData[section as keyof typeof editData] as string).split('\n').filter(item => item.trim() !== '')
-           : editData[section as keyof typeof editData]
-       };
+      let updateData: any = {};
+      
+      if (section === 'modelConfig') {
+        // Actualizar configuración del modelo
+        updateData = {
+          agentId: agent.agentId,
+          configuracion: {
+            modelo: editData.model,
+            temperatura: editData.temperatura
+          }
+        };
+      } else {
+        // Preparar los datos actualizados para prompts
+        const updatedPrompt = {
+          ...agent.prompt,
+          [section]: section === 'objectives' || section === 'rules' 
+            ? (editData[section as keyof typeof editData] as string).split('\n').filter(item => item.trim() !== '')
+            : editData[section as keyof typeof editData]
+        };
+        
+        updateData = {
+          agentId: agent.agentId,
+          prompt: updatedPrompt
+        };
+      }
 
       const response = await fetch(`/api/agents`, {
         method: 'PUT',
@@ -244,10 +345,7 @@ export default function AgentDetailPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          agentId: agent.agentId,
-          prompt: updatedPrompt
-        }),
+        body: JSON.stringify(updateData),
       });
 
       const result = await response.json();
@@ -337,6 +435,66 @@ export default function AgentDetailPage() {
     }
   };
 
+  const toggleAgentVisibility = () => {
+    if (!user || !agent) return;
+
+    const newVisibility = !agent.isPublic;
+    const actionText = newVisibility ? 'publicar' : 'despublicar';
+    
+    showConfirmation({
+      title: `${newVisibility ? 'Publicar' : 'Despublicar'} agente`,
+      description: newVisibility 
+        ? '¿Estás seguro de que quieres hacer público este agente? Estará disponible para todos los usuarios sin necesidad de iniciar sesión.'
+        : '¿Estás seguro de que quieres hacer privado este agente? Solo tú podrás acceder a él.',
+      confirmText: newVisibility ? 'Publicar' : 'Despublicar',
+      cancelText: 'Cancelar',
+      variant: newVisibility ? 'info' : 'warning',
+      onConfirm: async () => {
+        setChangingVisibility(true);
+        setError(null);
+        
+        try {
+          const token = await user.getIdToken();
+          
+          const response = await fetch(`/api/agents/${agent.agentId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              isPublic: newVisibility
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.success && result.agent) {
+            // Actualizar el estado del agente con los datos recibidos
+            setAgent(result.agent);
+            
+            // Mostrar modal de éxito
+            showSuccess({
+              title: '¡Éxito!',
+              description: `El agente ha sido ${actionText} correctamente.${newVisibility ? ' Ahora está disponible públicamente.' : ' Ahora es privado.'}`,
+              actionText: 'Continuar',
+              autoClose: true,
+              autoCloseDelay: 3000
+            });
+          } else {
+            console.error('Error en respuesta:', result);
+            setError(`Error cambiando visibilidad: ${result.error || 'Error desconocido'}`);
+          }
+        } catch (error) {
+          console.error('Error cambiando visibilidad:', error);
+          setError('Error de conexión al cambiar la visibilidad del agente');
+        } finally {
+          setChangingVisibility(false);
+        }
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0E0E10] text-white font-['Inter'] flex items-center justify-center">
@@ -348,17 +506,32 @@ export default function AgentDetailPage() {
     );
   }
 
-  if (!agent) {
+  if (error || (!loading && !agent)) {
     return (
       <div className="min-h-screen bg-[#0E0E10] text-white font-['Inter'] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-300 text-lg">Agente no encontrado</p>
+          <div className="mb-4">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-400" />
+            </div>
+            <p className="text-gray-300 text-lg mb-2">
+              {error || 'Agente no encontrado'}
+            </p>
+            <p className="text-gray-500 text-sm">
+              Es posible que el agente no exista o no tengas permisos para acceder a él.
+            </p>
+          </div>
           <Link href="/dashboard" className="text-[#3B82F6] hover:underline">
             Volver al Dashboard
           </Link>
         </div>
       </div>
     );
+  }
+
+  // TypeScript assertion: if we reach here, agent is not null
+  if (!agent) {
+    return null; // This should never happen due to the check above
   }
 
   return (
@@ -390,7 +563,7 @@ export default function AgentDetailPage() {
         <div className="max-w-6xl mx-auto">
           {/* Agent Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-[#3B82F6] to-[#00FFC3] rounded-2xl flex items-center justify-center">
                   <Bot className="w-8 h-8 text-[#0E0E10]" />
@@ -410,9 +583,39 @@ export default function AgentDetailPage() {
                     >
                       {agent.status === 'active' ? 'Activo' : 'Inactivo'}
                     </span>
+                    <span 
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        agent.isPublic ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'
+                      }`}
+                    >
+                      {agent.isPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                      {agent.isPublic ? 'Público' : 'Privado'}
+                    </span>
                     <span className="text-sm text-gray-500">ID: {agent.agentId}</span>
                   </div>
                 </div>
+              </div>
+              
+              {/* Botón de Publicar/Despublicar */}
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={toggleAgentVisibility}
+                  disabled={changingVisibility}
+                  className={`${
+                    agent.isPublic 
+                      ? 'bg-gray-600 hover:bg-gray-700 text-white' 
+                      : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-lg hover:shadow-blue-600/30 text-white'
+                  } font-semibold transition-all duration-300`}
+                >
+                  {changingVisibility ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : agent.isPublic ? (
+                    <Lock className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Globe className="w-4 h-4 mr-2" />
+                  )}
+                  {agent.isPublic ? 'Despublicar' : 'Publicar'}
+                </Button>
               </div>
             </div>
           </div>
@@ -787,6 +990,165 @@ export default function AgentDetailPage() {
                 )}
               </Card>
 
+              {/* Configuración del Modelo */}
+              <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+                      <Cpu className="w-5 h-5" />
+                      Configuración del Modelo
+                      <span className="text-sm text-gray-500 dark:text-gray-400 font-normal">
+                        ({agent.model || agent.configuracion?.modelo || 'gpt-3.5-turbo'})
+                      </span>
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleSection('modelConfig')}
+                        className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                      >
+                        {collapsedSections.modelConfig ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </Button>
+                      {editing !== 'modelConfig' && !collapsedSections.modelConfig && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing('modelConfig')}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                {!collapsedSections.modelConfig && (
+                  <CardContent>
+                    {editing === 'modelConfig' ? (
+                      <div className="space-y-6">
+                        {/* Selección de Modelo */}
+                        <div>
+                          <label className="text-gray-900 dark:text-white font-semibold mb-3 block">
+                            Modelo de IA
+                          </label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {AVAILABLE_MODELS.map((model) => (
+                              <Card 
+                                key={model.id}
+                                className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
+                                  editData.model === model.id 
+                                    ? 'ring-2 ring-[#3B82F6] bg-gradient-to-r from-[#3B82F6]/10 to-[#00FFC3]/10' 
+                                    : 'bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                                }`}
+                                onClick={() => setEditData({...editData, model: model.id})}
+                              >
+                                <CardContent className="p-4 text-center">
+                                  <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${model.color} flex items-center justify-center text-xl`}>
+                                    {model.icon}
+                                  </div>
+                                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
+                                    {model.name}
+                                  </h4>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                    {model.category}
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    {model.description}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Temperatura */}
+                        <div>
+                          <label className="text-gray-900 dark:text-white font-semibold mb-3 block">
+                            <Sliders className="w-4 h-4 inline mr-2" />
+                            Temperatura: {editData.temperatura}
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="2"
+                            step="0.1"
+                            value={editData.temperatura}
+                            onChange={(e) => setEditData({...editData, temperatura: parseFloat(e.target.value)})}
+                            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                          />
+                          <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-2">
+                            <span>0.0 - Más preciso</span>
+                            <span>1.0 - Balanceado</span>
+                            <span>2.0 - Más creativo</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => saveSection('modelConfig')}
+                            disabled={saving}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEditing}
+                            className="border-gray-300 dark:border-gray-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-8 h-8 bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] rounded-lg flex items-center justify-center text-[#0E0E10] text-sm">
+                              {AVAILABLE_MODELS.find(m => m.id === (agent.model || agent.configuracion?.modelo))?.icon || '🤖'}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900 dark:text-white">
+                                {AVAILABLE_MODELS.find(m => m.id === (agent.model || agent.configuracion?.modelo))?.name || 'Modelo no especificado'}
+                              </h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
+                                {AVAILABLE_MODELS.find(m => m.id === (agent.model || agent.configuracion?.modelo))?.category || 'Sin categoría'}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {AVAILABLE_MODELS.find(m => m.id === (agent.model || agent.configuracion?.modelo))?.description || 'Modelo por defecto del sistema'}
+                          </p>
+                        </div>
+                        
+                        <div className="bg-gray-100 dark:bg-gray-800/30 p-4 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">Temperatura:</span>
+                            <span className="text-[#3B82F6] font-semibold">
+                              {agent.configuracion?.temperatura || 0.7}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
+                            <div 
+                              className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] h-2 rounded-full" 
+                              style={{ width: `${((agent.configuracion?.temperatura || 0.7) / 2) * 100}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {(agent.configuracion?.temperatura || 0.7) < 0.5 ? 'Respuestas más precisas y consistentes' : 
+                             (agent.configuracion?.temperatura || 0.7) > 1.5 ? 'Respuestas más creativas y variadas' : 
+                             'Balance entre precisión y creatividad'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                )}
+              </Card>
+
               {/* Multi-Agente Configuration (Fase 2) */}
               <Card className="bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-700/50">
                 <CardHeader className="pb-3">
@@ -1077,6 +1439,10 @@ export default function AgentDetailPage() {
           </div>
         </div>
       </main>
+      
+      {/* Modales */}
+      <ConfirmationModal />
+      <SuccessModal />
     </div>
   );
 } 

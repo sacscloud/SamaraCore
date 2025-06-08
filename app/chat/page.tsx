@@ -8,6 +8,7 @@ import { useConversations, type Conversation, type Message } from '@/hooks/useCo
 import Markdown from '@/components/ui/markdown';
 import ThemeToggle from '@/components/ui/theme-toggle';
 import { useConfirmationModal } from '@/components/ui/confirmation-modal';
+import { useLoginRequiredModal } from '@/components/ui/login-required-modal';
 import { 
   PaperAirplaneIcon,
   Bars3Icon,
@@ -51,6 +52,9 @@ function ChatPageContent() {
   // Modal de confirmación
   const { showConfirmation, ConfirmationModal } = useConfirmationModal();
   
+  // Modal de login requerido
+  const { showLoginRequired, LoginRequiredModal } = useLoginRequiredModal();
+  
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -67,12 +71,8 @@ function ChatPageContent() {
     error: conversationsError
   } = useConversations(agentId || '');
 
-  // Verificar autenticación
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login');
-    }
-  }, [user, loading, router]);
+  // NO verificar autenticación aquí - permitir vista pública
+  // El interceptor de login se maneja al intentar enviar mensajes
 
   // Reset imagen error cuando cambie el usuario
   useEffect(() => {
@@ -83,11 +83,16 @@ function ChatPageContent() {
     try {
       setAgentError(null);
       
-      const token = await user?.getIdToken();
+      // Intentar cargar desde endpoint público primero
+      let response = await fetch(`/api/agents/public-list?agentId=${agentId}`);
       
-      const response = await fetch(`/api/agents/${agentId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      // Si falla o no es público, intentar con autenticación si está disponible
+      if (!response.ok && user) {
+        const token = await user.getIdToken();
+        response = await fetch(`/api/agents/${agentId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
       
       if (response.ok) {
         const data = await response.json();
@@ -95,7 +100,7 @@ function ChatPageContent() {
       } else {
         const errorData = await response.text();
         console.error('Error del servidor:', errorData);
-        setAgentError(`Error ${response.status}: ${errorData}`);
+        setAgentError(`Agente no encontrado o no disponible`);
       }
     } catch (error) {
       console.error('Error cargando agente:', error);
@@ -103,20 +108,26 @@ function ChatPageContent() {
     }
   }, [agentId, user]);
 
-  // Cargar agente
+  // Cargar agente (sin requerir autenticación)
   useEffect(() => {
-    if (agentId && user) {
+    if (agentId) {
       loadAgent();
     }
-  }, [agentId, user, loadAgent]);
+  }, [agentId, loadAgent]);
 
   const handleNewConversation = useCallback(async () => {
+    // Si el usuario no está autenticado, mostrar popup de login
+    if (!user) {
+      showLoginRequired();
+      return;
+    }
+
     const conversation = await createConversation('Nueva conversación');
     if (conversation) {
       setCurrentConversation(conversation);
       setSearchTerm('');
     }
-  }, [createConversation]);
+  }, [createConversation, user, showLoginRequired]);
 
   // Seleccionar conversación inicial
   useEffect(() => {
@@ -168,14 +179,39 @@ function ChatPageContent() {
   }, [message]);
 
   const handleSendMessage = async (messageContent: string = message) => {
-    if (!messageContent.trim() || !currentConversation || isSubmitting) return;
+    if (!messageContent.trim() || isSubmitting) return;
+
+    // Si el usuario no está autenticado, mostrar popup de login
+    if (!user) {
+      showLoginRequired();
+      return;
+    }
 
     setIsSubmitting(true);
+    
+    // Si no hay conversación actual, crear una nueva
+    let activeConversation = currentConversation;
+    if (!activeConversation) {
+      const newConversation = await createConversation('Nueva conversación');
+      if (!newConversation) {
+        setIsSubmitting(false);
+        return;
+      }
+      activeConversation = newConversation;
+      setCurrentConversation(newConversation);
+    }
+
+    // Solo limpiar el mensaje después de asegurar que tenemos una conversación
     setMessage('');
 
     try {
+      // En este punto, activeConversation está garantizado que no es null
+      if (!activeConversation) {
+        throw new Error('No se pudo obtener una conversación activa');
+      }
+
       // Agregar mensaje del usuario
-      const userMessage = await addMessage(currentConversation.conversationId, {
+      const userMessage = await addMessage(activeConversation.conversationId, {
         role: 'user',
         content: messageContent.trim()
       });
@@ -205,7 +241,7 @@ function ChatPageContent() {
           const data = await response.json();
           
           // Agregar respuesta del asistente
-          const assistantMessage = await addMessage(currentConversation.conversationId, {
+          const assistantMessage = await addMessage(activeConversation.conversationId, {
             role: 'assistant',
             content: data.response
           });
@@ -214,9 +250,9 @@ function ChatPageContent() {
             setCurrentConversation(assistantMessage);
             
             // Si es el primer mensaje del usuario, generar título automático
-            if (assistantMessage.messages.length === 2 && currentConversation.title === 'Nueva conversación') {
+            if (assistantMessage.messages.length === 2 && activeConversation.title === 'Nueva conversación') {
               const newTitle = generateConversationTitle(messageContent.trim());
-              await updateTitle(currentConversation.conversationId, newTitle);
+              await updateTitle(activeConversation.conversationId, newTitle);
             }
           }
         } else {
@@ -314,27 +350,7 @@ function ChatPageContent() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white dark:bg-gray-900">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No autenticado</h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">Necesitas iniciar sesión para usar el chat</p>
-          <button
-            onClick={() => router.push('/auth/login')}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            Iniciar Sesión
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Permitir vista pública - no bloquear usuarios no autenticados
 
   if (!agentId) {
     return (
@@ -557,6 +573,24 @@ function ChatPageContent() {
                   <Bars3Icon className="w-5 h-5" />
                 </button>
               )}
+              
+              {/* Botón para crear nuevo agente */}
+              <button
+                onClick={() => router.push('/dashboard/agents/new')}
+                className="group relative overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95"
+                title="Crear nuevo agente"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative flex items-center gap-2">
+                  <PlusIcon className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" />
+                  <span className="text-sm font-semibold tracking-wide">
+                    CREAR NUEVO AGENTE
+                  </span>
+                </div>
+                {/* Efecto de brillo */}
+                <div className="absolute inset-0 -top-2 -left-2 bg-gradient-to-r from-transparent via-white/20 to-transparent w-4 h-full transform -skew-x-12 group-hover:translate-x-full transition-transform duration-700"></div>
+              </button>
+              
               <div>
                 <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {currentConversation?.title || `Chat con ${agent?.agentName || 'Asistente'}`}
@@ -826,6 +860,9 @@ function ChatPageContent() {
 
       {/* Confirmation Modal */}
       <ConfirmationModal />
+      
+      {/* Login Required Modal */}
+      <LoginRequiredModal />
     </div>
   );
 }

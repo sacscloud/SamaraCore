@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { AgentSchema } from '@/lib/schemas';
 import { verifyFirebaseAuth } from '@/lib/firebase-auth';
+import { ObjectId } from 'mongodb';
 
 // Función auxiliar para validar temperatura
 function validateTemperature(temperatura: any): { isValid: boolean; value: number; error?: string } {
@@ -22,10 +23,8 @@ function validateTemperature(temperatura: any): { isValid: boolean; value: numbe
   return { isValid: true, value: temp };
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// GET - Obtener agente específico
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   // Verificar autenticación
   const authResult = await verifyFirebaseAuth(request);
   if (!authResult.authenticated) {
@@ -33,31 +32,43 @@ export async function GET(
   }
 
   try {
+    const { id } = params;
+    
+    if (!id) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'ID del agente es requerido' 
+      }, { status: 400 });
+    }
+
     const client = await clientPromise;
     const db = client.db('samaracore');
     
-    const agent = await db.collection('agents').findOne({ 
-      agentId: params.id,
-      user_id: authResult.userId
-    });
-    
+    // Buscar el agente por agentId y que pertenezca al usuario
+    const agent = await db.collection('agents')
+      .findOne({ 
+        agentId: id, 
+        user_id: authResult.userId 
+      });
+
     if (!agent) {
-      return NextResponse.json(
-        { success: false, error: 'Agente no encontrado' },
-        { status: 404 }
-      );
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Agente no encontrado o no tienes permisos para acceder a él' 
+      }, { status: 404 });
     }
-    
-    return NextResponse.json({ 
-      success: true, 
-      agent: { ...agent, _id: agent._id.toString() }
+
+    return NextResponse.json({
+      success: true,
+      agent: agent
     });
+
   } catch (error) {
-    console.error('Error fetching agent:', error);
-    return NextResponse.json(
-      { success: false, error: 'Error al obtener agente' },
-      { status: 500 }
-    );
+    console.error('Error obteniendo agente:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Error interno del servidor' 
+    }, { status: 500 });
   }
 }
 
@@ -144,7 +155,8 @@ export async function PATCH(
       'prompt',
       'status',
       'subAgents',
-      'orchestration'
+      'orchestration',
+      'isPublic'
     ];
     
     // Filtrar solo los campos permitidos del body
@@ -201,9 +213,16 @@ export async function PATCH(
       );
     }
     
+    // Obtener el agente actualizado para devolverlo
+    const updatedAgent = await db.collection('agents').findOne({ 
+      agentId: params.id,
+      user_id: authResult.userId 
+    });
+    
     return NextResponse.json({ 
       success: true, 
-      message: 'Agente actualizado correctamente'
+      message: 'Agente actualizado correctamente',
+      agent: updatedAgent
     });
   } catch (error) {
     console.error('Error updating agent:', error);
