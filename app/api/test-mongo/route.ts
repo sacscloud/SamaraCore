@@ -84,9 +84,7 @@ export async function GET(request: NextRequest) {
       .find({ isPublic: true })
       .toArray();
     
-    // Buscar el agente específico que está causando problemas
-    const specificAgent = await db.collection('agents')
-      .findOne({ agentId: 'agent_FMp8z63PJi7w' });
+
     
     const result = {
       success: true,
@@ -108,8 +106,6 @@ export async function GET(request: NextRequest) {
         })),
         totalAgents: totalCount,
         publicAgentsCount: publicAgents.length,
-        specificAgentFound: !!specificAgent,
-        specificAgent: specificAgent,
         allAgents: agents.map(agent => ({
           agentId: agent.agentId,
           agentName: agent.agentName,

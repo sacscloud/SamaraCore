@@ -97,7 +97,6 @@ interface Agent {
   status: 'active' | 'inactive';
   isPublic?: boolean;
   model?: string;
-  temperatura?: number;
   configuracion?: {
     modelo?: string;
     temperatura?: number;
@@ -302,7 +301,7 @@ export default function AgentDetailPage() {
       examples: agent.prompt.examples || '',
       responseFormat: agent.prompt.responseFormat || '',
       model: agent.model || agent.configuracion?.modelo || 'gpt-3.5-turbo',
-      temperatura: agent.temperatura || agent.configuracion?.temperatura || 0.7
+      temperatura: agent.configuracion?.temperatura || 0.7
     });
   };
 
@@ -1127,18 +1126,18 @@ export default function AgentDetailPage() {
                           <div className="flex items-center justify-between">
                             <span className="text-gray-700 dark:text-gray-300 font-medium">Temperatura:</span>
                             <span className="text-[#3B82F6] font-semibold">
-                              {agent.temperatura || agent.configuracion?.temperatura || 0.7}
+                              {agent.configuracion?.temperatura || 0.7}
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
                             <div 
                               className="bg-gradient-to-r from-[#3B82F6] to-[#00FFC3] h-2 rounded-full" 
-                              style={{ width: `${((agent.temperatura || agent.configuracion?.temperatura || 0.7) / 2) * 100}%` }}
+                              style={{ width: `${((agent.configuracion?.temperatura || 0.7) / 2) * 100}%` }}
                             ></div>
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {(agent.temperatura || agent.configuracion?.temperatura || 0.7) < 0.5 ? 'Respuestas más precisas y consistentes' : 
-                             (agent.temperatura || agent.configuracion?.temperatura || 0.7) > 1.5 ? 'Respuestas más creativas y variadas' : 
+                            {(agent.configuracion?.temperatura || 0.7) < 0.5 ? 'Respuestas más precisas y consistentes' : 
+                             (agent.configuracion?.temperatura || 0.7) > 1.5 ? 'Respuestas más creativas y variadas' : 
                              'Balance entre precisión y creatividad'}
                           </p>
                         </div>
