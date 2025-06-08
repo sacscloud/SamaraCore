@@ -190,14 +190,14 @@ function ChatPageContent() {
     setIsSubmitting(true);
     
     // Si no hay conversación actual, crear una nueva
-    let conversationToUse = currentConversation;
-    if (!conversationToUse) {
+    let activeConversation = currentConversation;
+    if (!activeConversation) {
       const newConversation = await createConversation('Nueva conversación');
       if (!newConversation) {
         setIsSubmitting(false);
         return;
       }
-      conversationToUse = newConversation;
+      activeConversation = newConversation;
       setCurrentConversation(newConversation);
     }
 
@@ -205,8 +205,9 @@ function ChatPageContent() {
     setMessage('');
 
     try {
+
       // Agregar mensaje del usuario
-      const userMessage = await addMessage(conversationToUse.conversationId, {
+      const userMessage = await addMessage(activeConversation.conversationId, {
         role: 'user',
         content: messageContent.trim()
       });
@@ -236,7 +237,7 @@ function ChatPageContent() {
           const data = await response.json();
           
           // Agregar respuesta del asistente
-          const assistantMessage = await addMessage(currentConversation.conversationId, {
+          const assistantMessage = await addMessage(activeConversation.conversationId, {
             role: 'assistant',
             content: data.response
           });
@@ -245,9 +246,9 @@ function ChatPageContent() {
             setCurrentConversation(assistantMessage);
             
             // Si es el primer mensaje del usuario, generar título automático
-            if (assistantMessage.messages.length === 2 && currentConversation.title === 'Nueva conversación') {
+            if (assistantMessage.messages.length === 2 && activeConversation.title === 'Nueva conversación') {
               const newTitle = generateConversationTitle(messageContent.trim());
-              await updateTitle(currentConversation.conversationId, newTitle);
+              await updateTitle(activeConversation.conversationId, newTitle);
             }
           }
         } else {
