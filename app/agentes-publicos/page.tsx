@@ -46,23 +46,45 @@ export default function AgentesPublicosPage() {
   const { showLoginRequired, LoginRequiredModal } = useLoginRequiredModal();
   const router = useRouter();
 
-  // Verificar autenticación
+  // Verificar autenticación opcional (sin generar errores en logs)
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+    
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/user', {
-          credentials: 'include'
-        });
-        const data = await response.json();
+        // Usar Firebase Auth directamente en lugar de la API
+        const { onAuthStateChanged } = await import('firebase/auth');
+        const { auth } = await import('@/lib/firebase');
         
-        if (data.success) {
-          setUser(data.user);
-        }
+        unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+          if (firebaseUser) {
+            // Usuario autenticado, convertir a formato esperado
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              emailVerified: firebaseUser.emailVerified
+            });
+          } else {
+            // Usuario no autenticado (esto es normal para página pública)
+            setUser(null);
+          }
+        });
       } catch (error) {
-        console.error('Error verificando autenticación:', error);
+        // Silenciosamente manejar errores - página pública no requiere auth
+        console.debug('Auth check opcional falló (normal para página pública):', error);
+        setUser(null);
       }
     };
+    
     checkAuth();
+    
+    // Cleanup function
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const fetchPublicAgents = async () => {
